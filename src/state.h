@@ -6,6 +6,7 @@
 
 struct aq_state_t {
     aq_obj_t *stack;
+    aq_alloc_t alloc;
 };
 
 #endif
