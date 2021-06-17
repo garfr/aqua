@@ -2,5 +2,5 @@
 #include "aqua.h"
 
 void aq_print_version() {
-	puts(AQUA_VERSION);
+    puts(AQUA_VERSION);
 }
