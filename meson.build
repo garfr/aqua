@@ -4,6 +4,7 @@ src = [
   'src/aqua.c',
   'src/object.c',
   'src/state.c',
+  'src/gc.c',
 ]
 
 inc = include_directories('.')

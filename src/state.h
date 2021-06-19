@@ -3,10 +3,7 @@
 
 #include "aqua.h"
 #include "object.h"
-
-struct aq_state_t {
-    aq_obj_t *stack;
-    aq_alloc_t alloc;
-};
+#include "gc.h"
+#include "types.h"
 
 #endif

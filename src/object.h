@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 
+#include "types.h"
 #include "aqua.h"
 
 #define OBJ_NIL_VAL 0xF /* 0b001111 */
