@@ -5,7 +5,7 @@
 	</blockquote>
   <p align="center">
 		<a href="https://github.com/garfr/aqua/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22"><img src="https://img.shields.io/github/issues/garfr/aqua/help%20wanted?color=green"></a>
-		<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+		<a href="LICENSE"><img src="https://img.shields.io/badge/license-ISC-blue.svg"></a>
 	</p>
 </div>
 
