@@ -17,6 +17,10 @@ typedef struct {
 
     const uint32_t *code;
     size_t code_sz;
+
+    /* integer literals */
+    const int64_t *nums;
+    size_t nums_sz;
 } aq_template_t;
 
 /* an instantiation of a template, ready to be executed with its captured
@@ -72,19 +76,44 @@ typedef struct {
 
 typedef enum {
     AQ_OP_RET,
+
     AQ_OP_MOV,
+
     AQ_OP_NIL,
-    AQ_OP_ADD,
-    AQ_OP_SUB,
-    AQ_OP_MUL,
-    AQ_OP_DIV,
-    AQ_OP_CONS,
+
+    AQ_OP_ADDRR,
+    AQ_OP_SUBRR,
+    AQ_OP_MULRR,
+    AQ_OP_DIVRR,
+    AQ_OP_CONSRR,
+
+    AQ_OP_ADDRK,
+    AQ_OP_SUBRK,
+    AQ_OP_MULRK,
+    AQ_OP_DIVRK,
+    AQ_OP_CONSRK,
+
+    AQ_OP_ADDKK,
+    AQ_OP_SUBKK,
+    AQ_OP_MULKK,
+    AQ_OP_DIVKK,
+    AQ_OP_CONSKK,
+
+    AQ_OP_SUBKR,
+    AQ_OP_DIVKR,
+    AQ_OP_CONSKR,
+
     AQ_OP_CAR,
     AQ_OP_CDR,
+    AQ_OP_LOADI,
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \
     ((((uint8_t)(op & 0xFF)) << 24) +                                          \
      (((uint8_t)(a & 0xFF) << 16) + (((uint8_t)(b & 0xFF) << 8)) +             \
       ((uint8_t)(c & 0xFF))))
+#define ENCODE_AD(op, a, d)                                                    \
+    ((((uint8_t)(op & 0xFF)) << 24) +                                          \
+     (((uint8_t)(a & 0xFF) << 16) + ((uint8_t)(d & 0xFFFF))))
+
 #endif

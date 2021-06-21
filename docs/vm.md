@@ -116,11 +116,31 @@ Similar to the Lua VM, the VM uses two stacks, one used for function activation 
 * OP_RET - returns the value of R(A)
 * OP_MOV - moves R(B) into R(A)
 * OP_NIL - moves the value nil into R(A)
-* OP_ADD - stores the result of adding R(B) and R(C) into R(A)
-* OP_SUB - stores the result of subtracting R(B) and R(C) into R(A)
-* OP_MUL - stores the result of multiplying R(B) and R(C) into R(A)
-* OP_DIV - stores the result of dividing R(B) and R(C) into R(A)
-* OP_CONS - creates a new pair stored in R(A) with R(B) and R(C) as car and cdr
+
+
+* OP_ADDRR - stores the result of adding R(B) and R(C) into R(A)
+* OP_SUBRR - stores the result of subtracting R(B) and R(C) into R(A)
+* OP_MULRR - stores the result of multiplying R(B) and R(C) into R(A)
+* OP_DIVRR - stores the result of dividing R(B) and R(C) into R(A)
+* OP_CONSRR - creates a new pair stored in R(A) with R(B) and R(C) as car and cdr
+
+* OP_ADDRK - stores the result of adding R(B) and K(C) into R(A)
+* OP_MULRK - stores the result of multiplying R(B) and K(C) into R(A)
+* OP_SUBRK - stores the result of subtracting R(B) and K(C) into R(A)
+* OP_DIVRK - stores the result of dividing R(B) and K(C) into R(A)
+* OP_CONSRK - creates a new pair stored in R(A) with R(B) and K(C) as car and cdr
+
+* OP_SUBKR - stores the result of subtracting K(B) and R(C) into R(A)
+* OP_DIVKR - stores the result of dividing K(B) and R(C) into R(A)
+* OP_CONSKR - creates a new pair stored in R(A) with K(B) and R(C) as car and cdr
+
+* OP_ADDKK - stores the result of adding K(B) and K(C) into R(A)
+* OP_MULKK - stores the result of multiplying K(B) and K(C) into R(A)
+* OP_SUBKK - stores the result of subtracting K(B) and K(C) into R(A)
+* OP_DIVKK - stores the result of dividing K(B) and K(C) into R(A)
+* OP_CONSKK - creates a new pair stored in K(A) with K(B) and R(C) as car and cdr
+
 * OP_CAR - stores the car of R(B) in R(A)
 * OP_CDR - stores the cdr of R(B) in R(A)
 
+* OP_LOADI : offset encoding - loads integer indexed by D into R(A)
