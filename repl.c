@@ -8,7 +8,7 @@ static void *libc_alloc(void *ptr, size_t old_sz, size_t new_sz) {
         free(ptr);
         return NULL;
     } else if (old_sz == 0) {
-        return malloc(new_sz);
+        return calloc(1, new_sz);
     } else {
         return realloc(ptr, new_sz);
     }
@@ -58,6 +58,10 @@ int main() {
 
     print_obj(p1);
     print_obj(p2);
+
+    aq_obj_t fun = aq_init_test_closure(aq);
+    aq_obj_t res = aq_execute_closure(aq, fun);
+    print_obj(res);
 
     aq_deinit_state(aq);
 }

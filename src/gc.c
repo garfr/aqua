@@ -3,9 +3,9 @@
 
 #include "gc.h"
 
-#define HEAP_ALIGN 16
+#define HEAP_ALIGN 32
 
-#define ALIGN(num) ((num) + ((num) % HEAP_ALIGN))
+#define ALIGN(num) ((num) + HEAP_ALIGN - ((num) % HEAP_ALIGN))
 
 void aq_init_heap(aq_state_t *aq, aq_heap_t *hp, size_t heap_sz) {
     hp->mem = aq->alloc(NULL, 0, heap_sz);
@@ -23,7 +23,7 @@ void *aq_gc_alloc(aq_heap_t *hp, size_t amt) {
         exit(EXIT_FAILURE);
         return NULL;
     }
-    uint8_t *ret = hp->top;
-    hp->top = (uint8_t *)ALIGN((size_t)(amt + hp->top));
+    uint8_t *ret = (uint8_t *)ALIGN((size_t)hp->top);
+    hp->top = ret + amt;
     return ret;
 }

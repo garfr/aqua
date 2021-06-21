@@ -57,4 +57,7 @@ aq_obj_t aq_get_cdr(aq_obj_t obj);
 
 aq_obj_type_t aq_get_type(aq_obj_t obj);
 
+aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj);
+aq_obj_t aq_init_test_closure(aq_state_t *aq);
+
 #endif

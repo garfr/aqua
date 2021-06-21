@@ -101,3 +101,17 @@ This encoding leaves several possible encodings for future datatypes, including 
 
 The embedder will be able to interface via the construction and evaluation of Lisp forms, making the creation of values and executino of code the same process.
 They can select their allocators, configure the garbage collector, and pause the garbage collector on certain values.
+
+## Instruction Encoding
+
+Instructions are encoded into 32 bit unsigned integers.  The operation is given the first 8 bits, and denotes which operations should be performed. Then there are 3 fields: A, B, and C all of which are 8 bits.  R(A), R(B), R(C) are used to state that the value stored in the register numerated by A, B, or C.
+
+## Evaluation Model
+
+The key observation that leads to great optimizations is that user code will only ever be executed at the toplevel, and that eval only has access to global variables.  This means that only global variables need to be placed in lookup tables, and local variables can be allocated to registers.
+Similar to the Lua VM, the VM uses two stacks, one used for function activation records, and the other used for local variables.  This lets functions use a dynamic amount of registers without needing an O(n) algorithm to search for activation records on a single stack.  
+
+## Operations
+
+* OP_RET - returns the value of R(A)
+* OP_MOV - copies R(A) into R(b)

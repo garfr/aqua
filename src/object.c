@@ -2,8 +2,6 @@
 #include "aqua.h"
 #include "gc.h"
 
-#define GET_HEAP_PTR(obj) (obj & ~OBJ_HEAP_MASK);
-
 aq_obj_t aq_encode_char(uint32_t cp) {
     return (cp << OBJ_LIT_SHIFT) | OBJ_CHAR_TAG;
 }
@@ -24,6 +22,10 @@ aq_obj_t aq_encode_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr) {
     pair->car = car;
     pair->cdr = cdr;
     return (((uint64_t)pair) & ~OBJ_HEAP_MASK) | OBJ_PAIR_TAG;
+}
+
+aq_obj_t aq_encode_closure(aq_closure_t *c) {
+    return (((uint64_t)c) & ~OBJ_HEAP_MASK) | OBJ_CLOSURE_TAG;
 }
 
 bool aq_is_char(aq_obj_t obj) {

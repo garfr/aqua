@@ -29,4 +29,8 @@
 #define OBJ_CONTIN_TAG 0x5  /* 0b0101 */
 #define OBJ_BIGNUM_TAG 0x6  /* 0b0110 */
 
+#define GET_HEAP_PTR(obj) (obj & ~OBJ_HEAP_MASK);
+
+aq_obj_t aq_encode_closure(aq_closure_t *c);
+
 #endif

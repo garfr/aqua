@@ -4,6 +4,7 @@ src = [
   'src/aqua.c',
   'src/object.c',
   'src/state.c',
+  'src/vm.c',
   'src/gc.c',
 ]
 
