@@ -18,7 +18,7 @@ aq_obj_t aq_encode_bool(bool b) {
 }
 
 aq_obj_t aq_encode_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr) {
-    aq_pair_t *pair = aq_gc_alloc(&aq->heap, sizeof(aq_pair_t));
+    aq_pair_t *pair = aq_gc_alloc(aq, sizeof(aq_pair_t));
     pair->car = car;
     pair->cdr = cdr;
     return (((uint64_t)pair) & ~OBJ_HEAP_MASK) | OBJ_PAIR_TAG;

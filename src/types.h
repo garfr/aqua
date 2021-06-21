@@ -41,6 +41,8 @@ struct aq_state_t {
 
     aq_alloc_t alloc;
     aq_heap_t heap;
+
+    aq_panic_t panic;
 };
 
 typedef enum {

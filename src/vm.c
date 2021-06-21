@@ -31,19 +31,19 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
 }
 
 aq_obj_t aq_init_test_closure(aq_state_t *aq) {
-    aq_template_t *t = aq_gc_alloc(&aq->heap, sizeof(aq_template_t));
+    aq_template_t *t = aq_gc_alloc(aq, sizeof(aq_template_t));
     t->name_sz = 4;
-    char *name = aq_gc_alloc(&aq->heap, sizeof(char) * t->name_sz);
+    char *name = aq_gc_alloc(aq, sizeof(char) * t->name_sz);
     memcpy(name, "test", t->name_sz);
     t->name = name;
 
     t->code_sz = 2;
-    uint32_t *code = aq_gc_alloc(&aq->heap, sizeof(uint32_t) * t->code_sz);
+    uint32_t *code = aq_gc_alloc(aq, sizeof(uint32_t) * t->code_sz);
     code[0] = ENCODE_ABC(AQ_OP_MOV, 1, 0, 0);
     code[1] = ENCODE_ABC(AQ_OP_RET, 1, 0, 0);
     t->code = code;
 
-    aq_closure_t *c = aq_gc_alloc(&aq->heap, sizeof(aq_closure_t));
+    aq_closure_t *c = aq_gc_alloc(aq, sizeof(aq_closure_t));
     c->t = t;
 
     return aq_encode_closure(c);

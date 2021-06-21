@@ -17,11 +17,10 @@ void aq_deinit_heap(aq_state_t *aq, aq_heap_t *hp) {
     aq->alloc(hp->mem, hp->len, 0);
 }
 
-void *aq_gc_alloc(aq_heap_t *hp, size_t amt) {
+void *aq_gc_alloc(aq_state_t *aq, size_t amt) {
+    aq_heap_t *hp = &aq->heap;
     if ((size_t)((hp->top + amt) - hp->mem) >= hp->len) {
-        printf("out of memory\n");
-        exit(EXIT_FAILURE);
-        return NULL;
+        aq_panic(aq);
     }
     uint8_t *ret = (uint8_t *)ALIGN((size_t)hp->top);
     hp->top = ret + amt;

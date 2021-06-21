@@ -1,7 +1,23 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <setjmp.h>
 
 #include "aqua.h"
+
+jmp_buf escape;
+
+static int error_handler(aq_state_t *aq) {
+    (void)aq;
+    longjmp(escape, 1);
+    return 1;
+}
+
+static void set_escaper() {
+    if (setjmp(escape) == 1) {
+        printf("error has ocurred\n");
+        exit(EXIT_SUCCESS);
+    }
+}
 
 static void *libc_alloc(void *ptr, size_t old_sz, size_t new_sz) {
     if (new_sz == 0) {
@@ -48,7 +64,9 @@ static void print_obj(aq_obj_t obj) {
 }
 
 int main() {
+    set_escaper();
     aq_state_t *aq = aq_init_state(libc_alloc);
+    aq_set_panic(aq, error_handler);
 
     aq_obj_t c = aq_encode_char('a');
     aq_obj_t b = aq_encode_bool(false);
@@ -64,4 +82,5 @@ int main() {
     print_obj(res);
 
     aq_deinit_state(aq);
+    return 0;
 }

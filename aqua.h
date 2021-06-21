@@ -11,6 +11,8 @@ typedef void *(*aq_alloc_t)(void *, size_t, size_t);
 
 typedef struct aq_state_t aq_state_t;
 
+typedef int (*aq_panic_t)(aq_state_t *);
+
 typedef uint64_t aq_obj_t;
 
 typedef enum {
@@ -59,5 +61,7 @@ aq_obj_type_t aq_get_type(aq_obj_t obj);
 
 aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj);
 aq_obj_t aq_init_test_closure(aq_state_t *aq);
+
+void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
 
 #endif

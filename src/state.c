@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "state.h"
 #include "object.h"
@@ -27,6 +26,7 @@ aq_state_t *aq_init_state(aq_alloc_t alloc) {
     aq->calls_sz = CALLS_SZ;
     aq->cur_call = aq->calls;
 
+    aq->panic = NULL;
     return aq;
 }
 
@@ -35,4 +35,15 @@ void aq_deinit_state(aq_state_t *aq) {
     aq->alloc(aq->calls, sizeof(aq_call_t) * aq->calls_sz, 0);
     aq_deinit_heap(aq, &aq->heap);
     aq->alloc(aq, sizeof(aq_state_t), 0);
+}
+
+void aq_set_panic(aq_state_t *aq, aq_panic_t panic) {
+    aq->panic = panic;
+}
+
+void aq_panic(aq_state_t *aq) {
+    if (aq->panic) {
+        aq->panic(aq); /* call the user defined panic function */
+    }
+    exit(EXIT_FAILURE);
 }
