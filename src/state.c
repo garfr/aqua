@@ -41,9 +41,9 @@ void aq_set_panic(aq_state_t *aq, aq_panic_t panic) {
     aq->panic = panic;
 }
 
-void aq_panic(aq_state_t *aq) {
+void aq_panic(aq_state_t *aq, aq_err_t err) {
     if (aq->panic) {
-        aq->panic(aq); /* call the user defined panic function */
+        aq->panic(aq, err); /* call the user defined panic function */
     }
     exit(EXIT_FAILURE);
 }

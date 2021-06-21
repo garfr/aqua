@@ -73,6 +73,11 @@ typedef struct {
 typedef enum {
     AQ_OP_RET,
     AQ_OP_MOV,
+    AQ_OP_NIL,
+    AQ_OP_ADD,
+    AQ_OP_SUB,
+    AQ_OP_MUL,
+    AQ_OP_DIV,
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \

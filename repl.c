@@ -4,19 +4,15 @@
 
 #include "aqua.h"
 
-jmp_buf escape;
+static const char *err_names[] = {
+    [AQ_ERR_OOM] = "Out of Memory",
+    [AQ_ERR_INVALID_ARITH] = "Invalid Arithmetic (Type Error)",
+};
 
-static int error_handler(aq_state_t *aq) {
+static int error_handler(aq_state_t *aq, aq_err_t err) {
     (void)aq;
-    longjmp(escape, 1);
+    printf("Err: %s\n", err_names[err]);
     return 1;
-}
-
-static void set_escaper() {
-    if (setjmp(escape) == 1) {
-        printf("error has ocurred\n");
-        exit(EXIT_SUCCESS);
-    }
 }
 
 static void *libc_alloc(void *ptr, size_t old_sz, size_t new_sz) {
@@ -34,13 +30,13 @@ static void print_obj_inner(aq_obj_t obj) {
     aq_obj_type_t typ = aq_get_type(obj);
     switch (typ) {
     case AQ_OBJ_INT:
-        printf("%ld", aq_decode_int(obj));
+        printf("%ld", aq_get_int(obj));
         return;
     case AQ_OBJ_BOOL:
-        printf("#%c", aq_decode_bool(obj) ? 't' : 'f');
+        printf("#%c", aq_get_bool(obj) ? 't' : 'f');
         return;
     case AQ_OBJ_CHAR:
-        printf("'%c'", aq_decode_char(obj));
+        printf("'%c'", aq_get_char(obj));
         return;
     case AQ_OBJ_NIL:
         printf("nil");
@@ -64,15 +60,14 @@ static void print_obj(aq_obj_t obj) {
 }
 
 int main() {
-    set_escaper();
     aq_state_t *aq = aq_init_state(libc_alloc);
     aq_set_panic(aq, error_handler);
 
-    aq_obj_t c = aq_encode_char('a');
-    aq_obj_t b = aq_encode_bool(false);
-    aq_obj_t p1 = aq_encode_pair(aq, c, b);
-    aq_obj_t n = aq_encode_nil();
-    aq_obj_t p2 = aq_encode_pair(aq, p1, n);
+    aq_obj_t c = aq_create_char('a');
+    aq_obj_t b = aq_create_bool(false);
+    aq_obj_t p1 = aq_create_pair(aq, c, b);
+    aq_obj_t n = aq_create_nil();
+    aq_obj_t p2 = aq_create_pair(aq, p1, n);
 
     print_obj(p1);
     print_obj(p2);

@@ -114,4 +114,10 @@ Similar to the Lua VM, the VM uses two stacks, one used for function activation 
 ## Operations
 
 * OP_RET - returns the value of R(A)
-* OP_MOV - copies R(A) into R(b)
+* OP_MOV - moves R(B) into R(A)
+* OP_NIL - moves the value nil into R(A)
+* OP_ADD - stores the result of adding R(B) and R(C) into R(A)
+* OP_SUB - stores the result of subtracting R(B) and R(C) into R(A)
+* OP_MUL - stores the result of multiplying R(B) and R(C) into R(A)
+* OP_DIV - stores the result of dividing R(B) and R(C) into R(A)
+

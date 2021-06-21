@@ -20,7 +20,7 @@ void aq_deinit_heap(aq_state_t *aq, aq_heap_t *hp) {
 void *aq_gc_alloc(aq_state_t *aq, size_t amt) {
     aq_heap_t *hp = &aq->heap;
     if ((size_t)((hp->top + amt) - hp->mem) >= hp->len) {
-        aq_panic(aq);
+        aq_panic(aq, AQ_ERR_OOM);
     }
     uint8_t *ret = (uint8_t *)ALIGN((size_t)hp->top);
     hp->top = ret + amt;
