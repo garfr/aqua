@@ -120,4 +120,7 @@ Similar to the Lua VM, the VM uses two stacks, one used for function activation 
 * OP_SUB - stores the result of subtracting R(B) and R(C) into R(A)
 * OP_MUL - stores the result of multiplying R(B) and R(C) into R(A)
 * OP_DIV - stores the result of dividing R(B) and R(C) into R(A)
+* OP_CONS - creates a new pair stored in R(A) with R(B) and R(C) as car and cdr
+* OP_CAR - stores the car of R(B) in R(A)
+* OP_CDR - stores the cdr of R(B) in R(A)
 

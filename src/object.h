@@ -6,8 +6,7 @@
 
 #include "types.h"
 #include "aqua.h"
-
-#define CAST(val, type) ((type)(val))
+#include "helpers.h"
 
 #define OBJ_NIL_VAL 0xF /* 0b001111 */
 

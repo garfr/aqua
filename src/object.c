@@ -18,7 +18,7 @@ aq_obj_t aq_create_bool(bool b) {
 }
 
 aq_obj_t aq_create_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr) {
-    aq_pair_t *pair = aq_gc_alloc(aq, sizeof(aq_pair_t));
+    aq_pair_t *pair = GC_NEW(aq, aq_pair_t);
     pair->car = car;
     pair->cdr = cdr;
     return OBJ_ENCODE_PAIR(pair);

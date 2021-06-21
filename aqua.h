@@ -11,7 +11,7 @@ typedef void *(*aq_alloc_t)(void *, size_t, size_t);
 
 typedef struct aq_state_t aq_state_t;
 
-typedef enum { AQ_ERR_OOM, AQ_ERR_INVALID_ARITH } aq_err_t;
+typedef enum { AQ_ERR_OOM, AQ_ERR_INVALID_ARITH, AQ_ERR_NOT_PAIR } aq_err_t;
 
 typedef int (*aq_panic_t)(aq_state_t *, aq_err_t err);
 

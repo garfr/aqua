@@ -31,7 +31,7 @@
     }
 
 #define ARITH(aq, op)                                                          \
-    (ARITH_OPS(aq, GET_RB(aq, inst), GET_RC(aq, inst), GET_RA(aq, inst), op))
+    ARITH_OPS(aq, GET_RB(aq, inst), GET_RC(aq, inst), GET_RA(aq, inst), op)
 
 aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
     aq_closure_t *c = OBJ_DECODE_CLOSURE(obj);
@@ -66,24 +66,44 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
         case AQ_OP_DIV:
             ARITH(aq, DIVI_OP);
             break;
+        case AQ_OP_CONS: {
+            aq_pair_t *pair = GC_NEW(aq, aq_pair_t);
+            pair->car = GET_RB(aq, inst);
+            pair->cdr = GET_RC(aq, inst);
+            GET_RA(aq, inst) = OBJ_ENCODE_PAIR(pair);
+            break;
+        }
+        case AQ_OP_CAR:
+            if (OBJ_IS_PAIR(GET_RB(aq, inst)))
+                GET_RA(aq, inst) = OBJ_GET_CAR(GET_RB(aq, inst));
+            else
+                aq_panic(aq, AQ_ERR_NOT_PAIR);
+            break;
+        case AQ_OP_CDR:
+            if (OBJ_IS_PAIR(GET_RB(aq, inst)))
+                GET_RA(aq, inst) = OBJ_GET_CDR(GET_RB(aq, inst));
+            else
+                aq_panic(aq, AQ_ERR_NOT_PAIR);
+            break;
         }
     }
 }
 
 aq_obj_t aq_init_test_closure(aq_state_t *aq) {
-    aq_template_t *t = aq_gc_alloc(aq, sizeof(aq_template_t));
+    aq_template_t *t = GC_NEW(aq, aq_template_t);
     t->name_sz = 4;
-    char *name = aq_gc_alloc(aq, sizeof(char) * t->name_sz);
+    char *name = GC_NEW_ARRAY(aq, char, t->name_sz);
     memcpy(name, "test", t->name_sz);
     t->name = name;
 
-    t->code_sz = 2;
-    uint32_t *code = aq_gc_alloc(aq, sizeof(uint32_t) * t->code_sz);
-    code[0] = ENCODE_ABC(AQ_OP_ADD, 2, 0, 1);
-    code[1] = ENCODE_ABC(AQ_OP_RET, 2, 0, 0);
+    t->code_sz = 3;
+    uint32_t *code = GC_NEW_ARRAY(aq, uint32_t, t->code_sz);
+    code[0] = ENCODE_ABC(AQ_OP_CONS, 2, 0, 1);
+    code[1] = ENCODE_ABC(AQ_OP_CONS, 3, 1, 2);
+    code[2] = ENCODE_ABC(AQ_OP_RET, 3, 0, 0);
     t->code = code;
 
-    aq_closure_t *c = aq_gc_alloc(aq, sizeof(aq_closure_t));
+    aq_closure_t *c = GC_NEW(aq, aq_closure_t);
     c->t = t;
 
     return aq_encode_closure(c);

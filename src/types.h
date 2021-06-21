@@ -78,6 +78,9 @@ typedef enum {
     AQ_OP_SUB,
     AQ_OP_MUL,
     AQ_OP_DIV,
+    AQ_OP_CONS,
+    AQ_OP_CAR,
+    AQ_OP_CDR,
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \
