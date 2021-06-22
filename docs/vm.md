@@ -77,6 +77,7 @@ There supports these types:
 * Array
 * Table
 * Continuation
+* Symbol 
 * Bignum
 
 They are encoded as so:
@@ -94,6 +95,7 @@ The rest of the encodings are followed by 60 bits of a pointer into the heap.
 * Table   - 0b0100
 * Contin. - 0b0101
 * Bignum  - 0b0110
+* Symbol  - 0b0111
 
 This encoding leaves several possible encodings for future datatypes, including C functions or C types.
 
@@ -104,12 +106,16 @@ They can select their allocators, configure the garbage collector, and pause the
 
 ## Instruction Encoding
 
-Instructions are encoded into 32 bit unsigned integers.  The operation is given the first 8 bits, and denotes which operations should be performed. Then there are 3 fields: A, B, and C all of which are 8 bits.  R(A), R(B), R(C) are used to state that the value stored in the register numerated by A, B, or C.
+Instructions are encoded into 32 bit unsigned integers.  There are 2 possible instruction enccodings, ABC and AD.  ABC is 3 8-bit fields, and AD is one 8 bit field and a 16 bit fields, used for jumps and operations that require more than 256 registers, upvalues, or constants (rare). R(A), R(B), R(C), and R(D) are used to state that the value stored in the register numerated by A, B, C, or D. The same goes for K (integers), S (strings).
 
 ## Evaluation Model
 
 The key observation that leads to great optimizations is that user code will only ever be executed at the toplevel, and that eval only has access to global variables.  This means that only global variables need to be placed in lookup tables, and local variables can be allocated to registers.
 Similar to the Lua VM, the VM uses two stacks, one used for function activation records, and the other used for local variables.  This lets functions use a dynamic amount of registers without needing an O(n) algorithm to search for activation records on a single stack.  
+
+The basic component of execution is a closure, an instantiation of a template.  The template object stores the code, literals, name, debug info and the closure holds a pointer to a template and the variables captured during the closures creation.
+
+Literals (integers, strings, symbols) are placed in an array and can be loaded into registers, or used directly in instructions.
 
 ## Operations
 
@@ -141,6 +147,6 @@ Similar to the Lua VM, the VM uses two stacks, one used for function activation 
 * OP_CONSKK - creates a new pair stored in K(A) with K(B) and R(C) as car and cdr
 
 * OP_CAR - stores the car of R(B) in R(A)
-* OP_CDR - stores the cdr of R(B) in R(A)
+G* OP_CDR - stores the cdr of R(B) in R(A)
 
-* OP_LOADI : offset encoding - loads integer indexed by D into R(A)
+* OP_LOADK : offset encoding - loads literal indexed by D into R(A)

@@ -15,4 +15,6 @@ void *aq_gc_alloc(aq_state_t *aq, size_t amt);
 #define GC_NEW_ARRAY(aq, type, nitems)                                         \
     (CAST(aq_gc_alloc(aq, nitems * sizeof(type)), type *))
 
+#define GC_NEW_BYTES(aq, bytes, type) (CAST(aq_gc_alloc(aq, bytes), type *))
+
 #endif

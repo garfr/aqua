@@ -19,9 +19,15 @@ aq_obj_t aq_create_bool(bool b) {
 
 aq_obj_t aq_create_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr) {
     aq_pair_t *pair = GC_NEW(aq, aq_pair_t);
+    pair->tt = HEAP_PAIR;
     pair->car = car;
     pair->cdr = cdr;
     return OBJ_ENCODE_PAIR(pair);
+}
+
+aq_obj_t aq_create_sym(aq_state_t *aq, const char *str, size_t sz) {
+    aq_sym_t *sym = aq_intern_sym(aq, str, sz);
+    return OBJ_ENCODE_SYM(sym);
 }
 
 aq_obj_t aq_encode_closure(aq_closure_t *c) {
@@ -68,6 +74,10 @@ bool aq_is_bignum(aq_obj_t obj) {
     return OBJ_IS_BIGNUM(obj);
 }
 
+bool aq_is_sym(aq_obj_t obj) {
+    return OBJ_IS_SYM(obj);
+}
+
 uint32_t aq_get_char(aq_obj_t obj) {
     return OBJ_DECODE_CHAR(obj);
 }
@@ -86,6 +96,12 @@ aq_obj_t aq_get_car(aq_obj_t obj) {
 
 aq_obj_t aq_get_cdr(aq_obj_t obj) {
     return OBJ_GET_CDR(obj);
+}
+
+const char *aq_get_sym(aq_obj_t obj, size_t *sz) {
+    aq_sym_t *sym = OBJ_DECODE_HEAP(obj, aq_sym_t *);
+    *sz = sym->l;
+    return sym->s;
 }
 
 aq_obj_type_t aq_get_type(aq_obj_t obj) {
@@ -107,6 +123,8 @@ aq_obj_type_t aq_get_type(aq_obj_t obj) {
             return AQ_OBJ_PAIR;
         } else if (OBJ_IS_PAIR(obj)) {
             return AQ_OBJ_CLOSURE;
+        } else if (OBJ_IS_SYM(obj)) {
+            return AQ_OBJ_SYM;
         } else if (OBJ_IS_CLOSURE(obj)) {
             return AQ_OBJ_ARRAY;
         } else if (OBJ_IS_ARRAY(obj)) {

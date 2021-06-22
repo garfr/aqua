@@ -8,4 +8,6 @@
 
 void aq_panic(aq_state_t *aq, aq_err_t err);
 
+aq_sym_t *aq_intern_sym(aq_state_t *aq, const char *str, size_t sz);
+
 #endif

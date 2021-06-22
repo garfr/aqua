@@ -41,6 +41,12 @@ static void print_obj_inner(aq_obj_t obj) {
     case AQ_OBJ_NIL:
         printf("nil");
         return;
+    case AQ_OBJ_SYM: {
+        size_t sz;
+        const char *sym = aq_get_sym(obj, &sz);
+        printf("%.*s", (int)sz, sym);
+        break;
+    }
     case AQ_OBJ_PAIR:
         printf("(");
         print_obj_inner(aq_get_car(obj));
@@ -68,14 +74,19 @@ int main() {
     aq_obj_t p1 = aq_create_pair(aq, c, b);
     aq_obj_t n = aq_create_nil();
     aq_obj_t p2 = aq_create_pair(aq, p1, n);
+    aq_obj_t s = aq_create_sym(aq, "other", 5);
 
     print_obj(p1);
     print_obj(p2);
+    print_obj(s);
+
+    printf("%ld bytes\n", aq_get_mem_used(aq));
 
     aq_obj_t fun = aq_init_test_closure(aq);
     aq_obj_t res = aq_execute_closure(aq, fun);
     print_obj(res);
 
+    printf("%ld bytes\n", aq_get_mem_used(aq));
     aq_deinit_state(aq);
     return 0;
 }

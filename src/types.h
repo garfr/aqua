@@ -3,6 +3,11 @@
 
 #include "aqua.h"
 
+/* items to be included in all heap objects */
+#define HEAP_OBJ_HEADER                                                        \
+    uint8_t tt;                                                                \
+    uint8_t mark
+
 typedef struct {
     uint8_t *mem;
     uint8_t *top;
@@ -11,6 +16,7 @@ typedef struct {
 
 /* the "template" for a function, instantiated as a closure */
 typedef struct {
+    HEAP_OBJ_HEADER;
     /* debug name */
     const char *name;
     size_t name_sz;
@@ -18,16 +24,29 @@ typedef struct {
     const uint32_t *code;
     size_t code_sz;
 
-    /* integer literals */
-    const int64_t *nums;
-    size_t nums_sz;
+    const aq_obj_t *lits;
+    size_t lits_sz;
 } aq_template_t;
 
 /* an instantiation of a template, ready to be executed with its captured
  * upvalues/enviroment */
 typedef struct {
+    HEAP_OBJ_HEADER;
     aq_template_t *t;
 } aq_closure_t;
+
+typedef struct aq_sym_t {
+    HEAP_OBJ_HEADER;
+    struct aq_sym_t *next;
+    size_t l;
+    char s[1];
+} aq_sym_t;
+
+typedef struct {
+    size_t syms;
+    size_t buckets_sz;
+    aq_sym_t **buckets;
+} aq_sym_tbl_t;
 
 /* a function call record */
 typedef struct {
@@ -46,6 +65,8 @@ struct aq_state_t {
     aq_alloc_t alloc;
     aq_heap_t heap;
 
+    aq_sym_tbl_t syms;
+
     aq_panic_t panic;
 };
 
@@ -56,13 +77,9 @@ typedef enum {
     HEAP_TABLE,
     HEAP_CONTIN,
     HEAP_BIGNUM,
+    HEAP_SYM,
+    HEAP_TEMPLATE,
 } aq_heap_type_t;
-
-/* items to be included in all heap objects */
-#define HEAP_OBJ_HEADER                                                        \
-    uint8_t t;                                                                 \
-    uint8_t mark
-
 /* so that a structure can point to a generic heap object */
 typedef struct {
     HEAP_OBJ_HEADER;
@@ -105,7 +122,8 @@ typedef enum {
 
     AQ_OP_CAR,
     AQ_OP_CDR,
-    AQ_OP_LOADI,
+
+    AQ_OP_LOADK,
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \

@@ -29,6 +29,7 @@
 #define OBJ_TABLE_TAG 0x4   /* 0b0100 */
 #define OBJ_CONTIN_TAG 0x5  /* 0b0101 */
 #define OBJ_BIGNUM_TAG 0x6  /* 0b0110 */
+#define OBJ_SYM_TAG 0x7     /* 0b0111 */
 
 #define OBJ_IS_NIL(obj) ((obj) == OBJ_NIL_VAL)
 
@@ -48,6 +49,7 @@
 #define OBJ_IS_TABLE(obj) (OBJ_IS_HEAP(obj, OBJ_TABLE_TAG))
 #define OBJ_IS_CONTIN(obj) (OBJ_IS_HEAP(obj, OBJ_CONTIN_TAG))
 #define OBJ_IS_BIGNUM(obj) (OBJ_IS_HEAP(obj, OBJ_BIGNUM_TAG))
+#define OBJ_IS_SYM(obj) (OBJ_IS_HEAP(obj, OBJ_SYM_TAG))
 
 #define OBJ_ENCODE(val, shift, tag) ((val << (shift)) | (tag))
 #define OBJ_ENCODE_LIT(val, tag) OBJ_ENCODE(val, OBJ_LIT_SHIFT, tag)
@@ -66,6 +68,7 @@
 #define OBJ_ENCODE_TABLE(ptr) OBJ_ENCODE_HEAP(ptr, OBJ_TABLE_TAG)
 #define OBJ_ENCODE_CONTIN(ptr) OBJ_ENCODE_HEAP(ptr, OBJ_CONTIN_TAG)
 #define OBJ_ENCODE_BIGNUM(ptr) OBJ_ENCODE_HEAP(ptr, OBJ_BIGNUM_TAG)
+#define OBJ_ENCODE_SYM(ptr) OBJ_ENCODE_HEAP(ptr, OBJ_SYM_TAG)
 
 #define OBJ_DECODE_LIT(obj, shift) ((obj) >> (shift))
 
@@ -73,6 +76,7 @@
 
 #define OBJ_DECODE_PAIR(obj) OBJ_DECODE_HEAP(obj, aq_pair_t *)
 #define OBJ_DECODE_CLOSURE(obj) OBJ_DECODE_HEAP(obj, aq_closure_t *)
+#define OBJ_DECODE_SYM(obj) OBJ_DECODE_HEAP(obj, aq_sym_t *)
 
 #define OBJ_DECODE_INT(obj) OBJ_DECODE_LIT(obj, OBJ_INT_SHIFT)
 #define OBJ_DECODE_CHAR(obj) OBJ_DECODE_LIT(obj, OBJ_LIT_SHIFT)

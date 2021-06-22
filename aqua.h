@@ -28,6 +28,7 @@ typedef enum {
     AQ_OBJ_TABLE,
     AQ_OBJ_CONTIN,
     AQ_OBJ_BIGNUM,
+    AQ_OBJ_SYM,
 } aq_obj_type_t;
 
 aq_state_t *aq_init_state(aq_alloc_t alloc);
@@ -40,6 +41,7 @@ aq_obj_t aq_create_int(int64_t num);
 aq_obj_t aq_create_nil(void);
 aq_obj_t aq_create_bool(bool b);
 aq_obj_t aq_create_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr);
+aq_obj_t aq_create_sym(aq_state_t *aq, const char *str, size_t sz);
 
 bool aq_is_char(aq_obj_t obj);
 bool aq_is_int(aq_obj_t obj);
@@ -51,6 +53,7 @@ bool aq_is_array(aq_obj_t obj);
 bool aq_is_table(aq_obj_t obj);
 bool aq_is_contin(aq_obj_t obj);
 bool aq_is_bignum(aq_obj_t obj);
+bool aq_is_sym(aq_obj_t obj);
 
 uint32_t aq_get_char(aq_obj_t obj);
 int64_t aq_get_int(aq_obj_t obj);
@@ -58,6 +61,7 @@ bool aq_get_bool(aq_obj_t obj);
 
 aq_obj_t aq_get_car(aq_obj_t obj);
 aq_obj_t aq_get_cdr(aq_obj_t obj);
+const char *aq_get_sym(aq_obj_t obj, size_t *sz);
 
 aq_obj_type_t aq_get_type(aq_obj_t obj);
 
@@ -65,5 +69,7 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj);
 aq_obj_t aq_init_test_closure(aq_state_t *aq);
 
 void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
+
+size_t aq_get_mem_used(aq_state_t *aq);
 
 #endif
