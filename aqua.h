@@ -15,7 +15,8 @@ typedef enum {
     AQ_ERR_OOM,
     AQ_ERR_INVALID_ARITH,
     AQ_ERR_NOT_PAIR,
-    AQ_ERR_NOT_TABLE
+    AQ_ERR_NOT_TABLE,
+    AQ_ERR_INVALID_COMP,
 } aq_err_t;
 
 typedef int (*aq_panic_t)(aq_state_t *, aq_err_t err);

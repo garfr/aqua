@@ -147,6 +147,24 @@ typedef enum {
 
     AQ_OP_TABGETR,
     AQ_OP_TABGETK,
+
+    AQ_OP_JMP,
+
+    AQ_OP_EQRR,
+    AQ_OP_EQKR,
+    AQ_OP_EQRK,
+    AQ_OP_EQKK,
+
+    AQ_OP_LTRR,
+    AQ_OP_LTKR,
+    AQ_OP_LTRK,
+    AQ_OP_LTKK,
+
+    AQ_OP_LTERR,
+    AQ_OP_LTEKR,
+    AQ_OP_LTERK,
+    AQ_OP_LTEKK,
+
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \

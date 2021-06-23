@@ -158,3 +158,19 @@ Literals (integers, strings, symbols) are placed in an array and can be loaded i
 * OP_TABGETK - sets R(A) to the value of the table in R(B) indexed by K(C)
 
 * OP_LOADK : offset encoding - loads literal indexed by D into R(A)
+
+All conditional operators **do not** skip an instruction if they are true
+* AQ_EQRR - R(A) equals R(B)
+* AQ_EQRK - R(A) equals K(B)
+* AQ_EQKR - K(A) equals R(B)
+* AQ_EQKK - K(A) equals K(B)
+* AQ_LTRR - R(A) is less than R(B)
+* AQ_LTRK - R(A) is less than K(B)
+* AQ_LTKR - K(A) is less than R(B)
+* AQ_LTKK - K(A) is less than K(B)
+* AQ_LTERR - R(A) less than or equal to R(B)
+* AQ_LTERK - R(A) less than or equal to K(B)
+* AQ_LTEKR - K(A) less than or equal to R(B)
+* AQ_LTEKK - K(A) less than or equal to K(B)
+
+* AQ_OP_JMP : offset encoding - unconditionally jumps D instructions, forward is A is 0, backwards if 1

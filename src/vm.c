@@ -26,6 +26,28 @@
 #define MULI_OP(a, b) ((a) * (b))
 #define DIVI_OP(a, b) ((a) / (b))
 
+#define EQ_OP(a, b) obj_eq(a, b)
+#define LT_OP(a, b) ((a) < (b))
+#define LTE_OP(a, b) ((a) <= (b))
+
+#define COMP_OP(aq, v1, v2, inst, op)                                          \
+    {                                                                          \
+        if (OBJ_IS_INT(v1) && OBJ_IS_INT(v2)) {                                \
+            uint64_t vv1 = OBJ_DECODE_INT(v1);                                 \
+            uint64_t vv2 = OBJ_DECODE_INT(v2);                                 \
+            if (!op(vv1, vv2)) {                                               \
+                insts++;                                                       \
+            }                                                                  \
+        } else {                                                               \
+            aq_panic(aq, AQ_ERR_INVALID_COMP);                                 \
+        }                                                                      \
+    }
+
+#define COMPRR(aq, op) COMP_OP(aq, GET_RA(aq, inst), GET_RB(aq, inst), inst, op)
+#define COMPKR(aq, op) COMP_OP(aq, GET_KA(t, inst), GET_RB(aq, inst), inst, op)
+#define COMPRK(aq, op) COMP_OP(aq, GET_RA(aq, inst), GET_KB(t, inst), inst, op)
+#define COMPKK(aq, op) COMP_OP(aq, GET_KA(t, inst), GET_KB(t, inst), inst, op)
+
 #define ARITH_OPS(aq, v1, v2, dest, op)                                        \
     {                                                                          \
         if (OBJ_IS_INT(v1) && OBJ_IS_INT(v2)) {                                \
@@ -240,6 +262,48 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
             break;
         case AQ_OP_TABSETKK:
             table_set(aq, GET_RA(aq, inst), GET_KB(t, inst), GET_KC(t, inst));
+            break;
+        case AQ_OP_JMP:
+            insts += GET_A(inst) ? -1 * GET_D(inst) : GET_D(inst);
+            break;
+
+        case AQ_OP_EQRR:
+            COMPRR(aq, EQ_OP);
+            break;
+        case AQ_OP_EQRK:
+            COMPRK(aq, EQ_OP);
+            break;
+        case AQ_OP_EQKR:
+            COMPKR(aq, EQ_OP);
+            break;
+        case AQ_OP_EQKK:
+            COMPKK(aq, EQ_OP);
+            break;
+
+        case AQ_OP_LTRR:
+            COMPRR(aq, LT_OP);
+            break;
+        case AQ_OP_LTRK:
+            COMPRK(aq, LT_OP);
+            break;
+        case AQ_OP_LTKR:
+            COMPKR(aq, LT_OP);
+            break;
+        case AQ_OP_LTKK:
+            COMPKK(aq, LT_OP);
+            break;
+
+        case AQ_OP_LTERR:
+            COMPRR(aq, LTE_OP);
+            break;
+        case AQ_OP_LTERK:
+            COMPRK(aq, LTE_OP);
+            break;
+        case AQ_OP_LTEKR:
+            COMPKR(aq, LTE_OP);
+            break;
+        case AQ_OP_LTEKK:
+            COMPKK(aq, LTE_OP);
             break;
         }
     }
