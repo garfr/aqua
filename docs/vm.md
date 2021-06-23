@@ -147,6 +147,14 @@ Literals (integers, strings, symbols) are placed in an array and can be loaded i
 * OP_CONSKK - creates a new pair stored in K(A) with K(B) and R(C) as car and cdr
 
 * OP_CAR - stores the car of R(B) in R(A)
-G* OP_CDR - stores the cdr of R(B) in R(A)
+* OP_CDR - stores the cdr of R(B) in R(A)
+
+* OP_TABNEW : offset encoding - creates a new table and places it in R(A), with at least R(D) buckets
+* OP_TABSETRR - adds to the table in R(A) an entry with key R(B) and value R(C)
+* OP_TABSETRK - adds to the table in R(A) an entry with key R(B) and value K(C)
+* OP_TABSETKR - adds to the table in R(A) an entry with key K(B) and value R(C)
+* OP_TABSETKK - adds to the table in R(A) an entry with key K(B) and value K(C)
+* OP_TABGETR - sets R(A) to the value of the table in R(B) indexed by R(C)
+* OP_TABGETK - sets R(A) to the value of the table in R(B) indexed by K(C)
 
 * OP_LOADK : offset encoding - loads literal indexed by D into R(A)

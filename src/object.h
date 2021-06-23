@@ -43,6 +43,10 @@
 
 #define OBJ_IS_HEAP(obj, tag) OBJ_IS(obj, OBJ_HEAP_MASK, tag)
 
+#define OBJ_IS_HEAP_ANY(obj)                                                   \
+    (((obj) & (OBJ_HEAP_MASK)) >= OBJ_PAIR_TAG) &&                             \
+        (((obj) & (OBJ_HEAP_MASK)) <= OBJ_SYM_TAG)
+
 #define OBJ_IS_PAIR(obj) (OBJ_IS_HEAP(obj, OBJ_PAIR_TAG))
 #define OBJ_IS_CLOSURE(obj) (OBJ_IS_HEAP(obj, OBJ_CLOSURE_TAG))
 #define OBJ_IS_ARRAY(obj) (OBJ_IS_HEAP(obj, OBJ_ARRAY_TAG))
@@ -86,5 +90,7 @@
 #define OBJ_GET_CDR(obj) (OBJ_DECODE_PAIR(obj)->cdr)
 
 aq_obj_t aq_encode_closure(aq_closure_t *c);
+
+aq_tbl_t *aq_new_table(aq_state_t *state, size_t init_buckets);
 
 #endif

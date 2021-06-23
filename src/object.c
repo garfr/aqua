@@ -122,18 +122,29 @@ aq_obj_type_t aq_get_type(aq_obj_t obj) {
         if (aq_is_pair(obj)) {
             return AQ_OBJ_PAIR;
         } else if (OBJ_IS_PAIR(obj)) {
-            return AQ_OBJ_CLOSURE;
+            return AQ_OBJ_PAIR;
         } else if (OBJ_IS_SYM(obj)) {
             return AQ_OBJ_SYM;
         } else if (OBJ_IS_CLOSURE(obj)) {
-            return AQ_OBJ_ARRAY;
+            return AQ_OBJ_CLOSURE;
         } else if (OBJ_IS_ARRAY(obj)) {
-            return AQ_OBJ_TABLE;
+            return AQ_OBJ_ARRAY;
         } else if (OBJ_IS_TABLE(obj)) {
-            return AQ_OBJ_CONTIN;
+            return AQ_OBJ_TABLE;
         } else if (OBJ_IS_CONTIN(obj)) {
-            return AQ_OBJ_BIGNUM;
+            return AQ_OBJ_CONTIN;
         }
     }
     return -1;
+}
+
+aq_tbl_t *aq_new_table(aq_state_t *aq, size_t init_buckets) {
+    aq_tbl_t *tbl = GC_NEW(aq, aq_tbl_t);
+    if (init_buckets == 0) {
+        init_buckets = 8;
+    }
+    tbl->buckets_sz = init_buckets;
+    tbl->entries = 0;
+    tbl->buckets = GC_NEW_ARRAY(aq, aq_tbl_entry_t *, tbl->buckets_sz);
+    return tbl;
 }

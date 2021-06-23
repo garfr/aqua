@@ -48,6 +48,19 @@ typedef struct {
     aq_sym_t **buckets;
 } aq_sym_tbl_t;
 
+typedef struct aq_tbl_entry_t {
+    struct aq_tbl_entry_t *n;
+    aq_obj_t k;
+    aq_obj_t v;
+} aq_tbl_entry_t;
+
+typedef struct {
+    HEAP_OBJ_HEADER;
+    size_t entries;
+    size_t buckets_sz;
+    aq_tbl_entry_t **buckets;
+} aq_tbl_t;
+
 /* a function call record */
 typedef struct {
     size_t var_pos;
@@ -124,6 +137,16 @@ typedef enum {
     AQ_OP_CDR,
 
     AQ_OP_LOADK,
+
+    AQ_OP_TABNEW,
+
+    AQ_OP_TABSETRR,
+    AQ_OP_TABSETKR,
+    AQ_OP_TABSETRK,
+    AQ_OP_TABSETKK,
+
+    AQ_OP_TABGETR,
+    AQ_OP_TABGETK,
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \

@@ -7,6 +7,8 @@
 static const char *err_names[] = {
     [AQ_ERR_OOM] = "Out of Memory",
     [AQ_ERR_INVALID_ARITH] = "Invalid Arithmetic (Type Error)",
+    [AQ_ERR_NOT_PAIR] = "Not Pair (Type Error)",
+    [AQ_ERR_NOT_TABLE] = "Not Table (Type Error)",
 };
 
 static int error_handler(aq_state_t *aq, aq_err_t err) {
@@ -54,8 +56,11 @@ static void print_obj_inner(aq_obj_t obj) {
         print_obj_inner(aq_get_cdr(obj));
         printf(")");
         break;
+    case AQ_OBJ_TABLE:
+        printf("<table>");
+        break;
     default:
-        printf("<invalid type>");
+        printf("<invalid type> %d", typ);
         break;
     }
 }
@@ -68,17 +73,6 @@ static void print_obj(aq_obj_t obj) {
 int main() {
     aq_state_t *aq = aq_init_state(libc_alloc);
     aq_set_panic(aq, error_handler);
-
-    aq_obj_t c = aq_create_char('a');
-    aq_obj_t b = aq_create_bool(false);
-    aq_obj_t p1 = aq_create_pair(aq, c, b);
-    aq_obj_t n = aq_create_nil();
-    aq_obj_t p2 = aq_create_pair(aq, p1, n);
-    aq_obj_t s = aq_create_sym(aq, "other", 5);
-
-    print_obj(p1);
-    print_obj(p2);
-    print_obj(s);
 
     printf("%ld bytes\n", aq_get_mem_used(aq));
 

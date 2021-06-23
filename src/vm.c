@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "vm.h"
 #include "object.h"
@@ -56,6 +57,76 @@
         pair->cdr = v2;                                                        \
         GET_RA(aq, inst) = OBJ_ENCODE_PAIR(pair);                              \
     }
+
+size_t hash_obj(aq_obj_t obj) {
+    if (OBJ_IS_HEAP_ANY(obj)) {
+        return OBJ_DECODE_HEAP(obj, size_t);
+    } else if (OBJ_IS_SYM(obj)) {
+        size_t total = 0;
+        aq_sym_t *sym = OBJ_DECODE_SYM(obj);
+        for (size_t i = 0; i < sym->l; i++) {
+            total = (total << 4) + sym->s[i];
+            size_t g = total & 0xf0000000;
+            if (g != 0) {
+                total = total ^ (g >> 24);
+                total = total ^ g;
+            }
+        }
+        return total;
+    } else if (OBJ_IS_INT(obj)) {
+        return OBJ_DECODE_INT(obj);
+    } else if (OBJ_IS_BOOL(obj)) {
+        return OBJ_DECODE_BOOL(obj);
+    } else if (OBJ_IS_NIL(obj)) {
+        return OBJ_NIL_VAL;
+    } else if (OBJ_IS_CHAR(obj)) {
+        return OBJ_DECODE_CHAR(obj);
+    }
+    printf("internal error: unimplemented hash case\n");
+    exit(EXIT_FAILURE);
+}
+
+bool obj_eq(aq_obj_t ob1, aq_obj_t ob2) {
+    return ob1 == ob2; /* this works for now as symbols are interned */
+}
+
+aq_obj_t table_search(aq_state_t *aq, aq_obj_t tbl_obj, aq_obj_t key) {
+    if (OBJ_IS_TABLE(tbl_obj)) {
+        aq_tbl_t *tbl = OBJ_DECODE_HEAP(tbl_obj, aq_tbl_t *);
+        size_t idx = hash_obj(key) % tbl->buckets_sz;
+        for (aq_tbl_entry_t *entry = tbl->buckets[idx]; entry;
+             entry = entry->n) {
+            if (obj_eq(entry->k, key)) {
+                return entry->v;
+            }
+        }
+        return OBJ_NIL_VAL;
+    }
+    aq->panic(aq, AQ_ERR_NOT_TABLE);
+    return 0;
+}
+
+void table_set(aq_state_t *aq, aq_obj_t tbl_obj, aq_obj_t key, aq_obj_t val) {
+    if (OBJ_IS_TABLE(tbl_obj)) {
+        aq_tbl_t *tbl = OBJ_DECODE_HEAP(tbl_obj, aq_tbl_t *);
+        size_t idx = hash_obj(key) % tbl->buckets_sz;
+        for (aq_tbl_entry_t *entry = tbl->buckets[idx]; entry;
+             entry = entry->n) {
+            if (obj_eq(entry->k, key)) {
+                entry->v = val;
+                return;
+            }
+        }
+        aq_tbl_entry_t *new_entry = aq->alloc(NULL, 0, sizeof(aq_tbl_entry_t));
+        new_entry->n = tbl->buckets[idx];
+        tbl->buckets[idx] = new_entry;
+        new_entry->k = key;
+        new_entry->v = val;
+        tbl->entries++;
+    } else {
+        aq->panic(aq, AQ_ERR_NOT_TABLE);
+    }
+}
 
 aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
     aq_closure_t *c = OBJ_DECODE_CLOSURE(obj);
@@ -147,15 +218,39 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
         case AQ_OP_LOADK:
             GET_RA(aq, inst) = GET_KD(t, inst);
             break;
+        case AQ_OP_TABNEW:
+            GET_RA(aq, inst) = OBJ_ENCODE_TABLE(aq_new_table(aq, GET_D(inst)));
+            break;
+        case AQ_OP_TABGETR:
+            GET_RA(aq, inst) =
+                table_search(aq, GET_RB(aq, inst), GET_RC(aq, inst));
+            break;
+        case AQ_OP_TABGETK:
+            GET_RA(aq, inst) =
+                table_search(aq, GET_RB(aq, inst), GET_KC(t, inst));
+            break;
+        case AQ_OP_TABSETRR:
+            table_set(aq, GET_RA(aq, inst), GET_RB(aq, inst), GET_RC(aq, inst));
+            break;
+        case AQ_OP_TABSETKR:
+            table_set(aq, GET_RA(aq, inst), GET_KB(t, inst), GET_RC(aq, inst));
+            break;
+        case AQ_OP_TABSETRK:
+            table_set(aq, GET_RA(aq, inst), GET_RB(aq, inst), GET_KC(t, inst));
+            break;
+        case AQ_OP_TABSETKK:
+            table_set(aq, GET_RA(aq, inst), GET_KB(t, inst), GET_KC(t, inst));
+            break;
         }
     }
 }
 
 aq_obj_t aq_init_test_closure(aq_state_t *aq) {
-    uint8_t *t_buf = GC_NEW_BYTES(
-        aq,
-        sizeof(aq_template_t) + (sizeof(aq_obj_t) * 2) + (sizeof(uint32_t) * 4),
-        uint8_t);
+    uint8_t *t_buf =
+        GC_NEW_BYTES(aq,
+                     sizeof(aq_template_t) + (sizeof(aq_obj_t) * 2) +
+                         (sizeof(uint32_t) * 15),
+                     uint8_t);
     aq_template_t *t = CAST(t_buf, aq_template_t *);
     t->tt = HEAP_TEMPLATE;
     t->name_sz = 4;
@@ -172,13 +267,15 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
     lits[1] = OBJ_ENCODE_SYM(aq_intern_sym(aq, "thing", 5));
     t->lits = lits;
 
-    t->code_sz = 4;
+    t->code_sz = 15;
     uint32_t *code =
         CAST(t_buf + sizeof(aq_template_t) + (sizeof(char) * t->name_sz) +
                  (sizeof(aq_obj_t) * t->lits_sz),
              uint32_t *);
-    code[0] = ENCODE_ABC(AQ_OP_CONSKK, 1, 0, 1);
-    code[1] = ENCODE_ABC(AQ_OP_RET, 1, 0, 0);
+    code[0] = ENCODE_AD(AQ_OP_TABNEW, 0, 8);
+    code[1] = ENCODE_ABC(AQ_OP_TABSETKK, 0, 1, 0);
+    code[2] = ENCODE_ABC(AQ_OP_TABGETK, 1, 0, 1);
+    code[3] = ENCODE_ABC(AQ_OP_RET, 1, 0, 0);
     t->code = code;
 
     aq_closure_t *c = GC_NEW(aq, aq_closure_t);
