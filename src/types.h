@@ -105,9 +105,11 @@ typedef struct {
 } aq_pair_t;
 
 typedef enum {
-    AQ_OP_RET,
+    AQ_OP_RETR,
+    AQ_OP_RETK,
 
-    AQ_OP_MOV,
+    AQ_OP_MOVR,
+    AQ_OP_MOVK,
 
     AQ_OP_NIL,
 
@@ -135,8 +137,6 @@ typedef enum {
 
     AQ_OP_CAR,
     AQ_OP_CDR,
-
-    AQ_OP_LOADK,
 
     AQ_OP_TABNEW,
 

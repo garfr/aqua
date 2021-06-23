@@ -119,8 +119,12 @@ Literals (integers, strings, symbols) are placed in an array and can be loaded i
 
 ## Operations
 
-* OP_RET - returns the value of R(A)
-* OP_MOV - moves R(B) into R(A)
+* OP_RETR - returns the value of R(A)
+* OP_RETK : offset encoding - returns the value of K(D)
+
+* OP_MOVR - moves R(B) into R(A)
+* OP_MOVK : offset encoding - moves K(D) into R(A)
+
 * OP_NIL - moves the value nil into R(A)
 
 

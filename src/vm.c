@@ -158,10 +158,15 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
     uint32_t inst;
     while (1) {
         switch (GET_OP((inst = (*(insts++))))) {
-        case AQ_OP_RET:
+        case AQ_OP_RETR:
             return GET_RA(aq, inst);
-        case AQ_OP_MOV:
+        case AQ_OP_RETK:
+            return GET_KD(t, inst);
+        case AQ_OP_MOVR:
             GET_RA(aq, inst) = GET_RB(aq, inst);
+            break;
+        case AQ_OP_MOVK:
+            GET_RA(aq, inst) = GET_KD(t, inst);
             break;
         case AQ_OP_NIL:
             GET_RA(aq, inst) = OBJ_NIL_VAL;
@@ -237,9 +242,6 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
             else
                 aq_panic(aq, AQ_ERR_NOT_PAIR);
             break;
-        case AQ_OP_LOADK:
-            GET_RA(aq, inst) = GET_KD(t, inst);
-            break;
         case AQ_OP_TABNEW:
             GET_RA(aq, inst) = OBJ_ENCODE_TABLE(aq_new_table(aq, GET_D(inst)));
             break;
@@ -312,7 +314,7 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
 aq_obj_t aq_init_test_closure(aq_state_t *aq) {
     uint8_t *t_buf =
         GC_NEW_BYTES(aq,
-                     sizeof(aq_template_t) + (sizeof(aq_obj_t) * 2) +
+                     sizeof(aq_template_t) + (sizeof(aq_obj_t) * 3) +
                          (sizeof(uint32_t) * 15),
                      uint8_t);
     aq_template_t *t = CAST(t_buf, aq_template_t *);
@@ -323,12 +325,13 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
     memcpy(name, "test", t->name_sz);
     t->name = name;
 
-    t->lits_sz = 2;
+    t->lits_sz = 3;
     aq_obj_t *lits =
         CAST(t_buf + sizeof(aq_template_t) + (sizeof(char) * t->name_sz),
              aq_obj_t *);
     lits[0] = OBJ_ENCODE_INT(3);
     lits[1] = OBJ_ENCODE_SYM(aq_intern_sym(aq, "thing", 5));
+    lits[2] = OBJ_ENCODE_INT(5);
     t->lits = lits;
 
     t->code_sz = 15;
@@ -336,10 +339,10 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
         CAST(t_buf + sizeof(aq_template_t) + (sizeof(char) * t->name_sz) +
                  (sizeof(aq_obj_t) * t->lits_sz),
              uint32_t *);
-    code[0] = ENCODE_AD(AQ_OP_TABNEW, 0, 8);
-    code[1] = ENCODE_ABC(AQ_OP_TABSETKK, 0, 1, 0);
-    code[2] = ENCODE_ABC(AQ_OP_TABGETK, 1, 0, 1);
-    code[3] = ENCODE_ABC(AQ_OP_RET, 1, 0, 0);
+    code[0] = ENCODE_ABC(AQ_OP_LTKK, 2, 0, 0);
+    code[1] = ENCODE_AD(AQ_OP_JMP, 0, 1);
+    code[2] = ENCODE_AD(AQ_OP_RETK, 0, 0);
+    code[3] = ENCODE_AD(AQ_OP_RETK, 0, 2);
     t->code = code;
 
     aq_closure_t *c = GC_NEW(aq, aq_closure_t);
