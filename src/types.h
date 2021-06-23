@@ -81,6 +81,8 @@ struct aq_state_t {
     aq_sym_tbl_t syms;
 
     aq_panic_t panic;
+
+    aq_obj_t g;
 };
 
 typedef enum {
@@ -165,6 +167,13 @@ typedef enum {
     AQ_OP_LTERK,
     AQ_OP_LTEKK,
 
+    AQ_OP_GGETR,
+    AQ_OP_GGETK,
+
+    AQ_OP_GSETRR,
+    AQ_OP_GSETRK,
+    AQ_OP_GSETKR,
+    AQ_OP_GSETKK,
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \

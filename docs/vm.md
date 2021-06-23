@@ -164,17 +164,26 @@ Literals (integers, strings, symbols) are placed in an array and can be loaded i
 * OP_LOADK : offset encoding - loads literal indexed by D into R(A)
 
 All conditional operators **do not** skip an instruction if they are true
-* AQ_EQRR - R(A) equals R(B)
-* AQ_EQRK - R(A) equals K(B)
-* AQ_EQKR - K(A) equals R(B)
-* AQ_EQKK - K(A) equals K(B)
-* AQ_LTRR - R(A) is less than R(B)
-* AQ_LTRK - R(A) is less than K(B)
-* AQ_LTKR - K(A) is less than R(B)
-* AQ_LTKK - K(A) is less than K(B)
-* AQ_LTERR - R(A) less than or equal to R(B)
-* AQ_LTERK - R(A) less than or equal to K(B)
-* AQ_LTEKR - K(A) less than or equal to R(B)
-* AQ_LTEKK - K(A) less than or equal to K(B)
+* OP_EQRR - R(A) equals R(B)
+* OP_EQRK - R(A) equals K(B)
+* OP_EQKR - K(A) equals R(B)
+* OP_EQKK - K(A) equals K(B)
+* OP_LTRR - R(A) is less than R(B)
+* OP_LTRK - R(A) is less than K(B)
+* OP_LTKR - K(A) is less than R(B)
+* OP_LTKK - K(A) is less than K(B)
+* OP_LTERR - R(A) less than or equal to R(B)
+* OP_LTERK - R(A) less than or equal to K(B)
+* OP_LTEKR - K(A) less than or equal to R(B)
+* OP_LTEKK - K(A) less than or equal to K(B)
 
-* AQ_OP_JMP : offset encoding - unconditionally jumps D instructions, forward is A is 0, backwards if 1
+* OP_JMP : offset encoding - unconditionally jumps D instructions, forward is A is 0, backwards if 1
+
+* OP_GGETR : sets R(A) to the value indexed in the global table by R(B)
+* OP_GGETK : sets R(A) to the value indexed in the global table by K(B)
+
+* OP_GSETRR : sets the table value in the global table with key R(A) and val R(B)
+* OP_GSETKR : sets the table value in the global table with key K(A) and val R(B)
+* OP_GSETRK : sets the table value in the global table with key R(A) and val K(B)
+* OP_GSETKK : sets the table value in the global table with key K(A) and val K(B)
+

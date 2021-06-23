@@ -269,6 +269,26 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
             insts += GET_A(inst) ? -1 * GET_D(inst) : GET_D(inst);
             break;
 
+        case AQ_OP_GGETR:
+            GET_RA(aq, inst) = table_search(aq, aq->g, GET_RC(aq, inst));
+            break;
+        case AQ_OP_GGETK:
+            GET_RA(aq, inst) = table_search(aq, aq->g, GET_KC(t, inst));
+            break;
+
+        case AQ_OP_GSETRR:
+            table_set(aq, aq->g, GET_RA(aq, inst), GET_RB(aq, inst));
+            break;
+        case AQ_OP_GSETKR:
+            table_set(aq, aq->g, GET_KA(t, inst), GET_RB(aq, inst));
+            break;
+        case AQ_OP_GSETRK:
+            table_set(aq, aq->g, GET_RA(aq, inst), GET_KB(t, inst));
+            break;
+        case AQ_OP_GSETKK:
+            table_set(aq, aq->g, GET_KA(t, inst), GET_KB(t, inst));
+            break;
+
         case AQ_OP_EQRR:
             COMPRR(aq, EQ_OP);
             break;
@@ -339,10 +359,9 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
         CAST(t_buf + sizeof(aq_template_t) + (sizeof(char) * t->name_sz) +
                  (sizeof(aq_obj_t) * t->lits_sz),
              uint32_t *);
-    code[0] = ENCODE_ABC(AQ_OP_LTKK, 2, 0, 0);
-    code[1] = ENCODE_AD(AQ_OP_JMP, 0, 1);
-    code[2] = ENCODE_AD(AQ_OP_RETK, 0, 0);
-    code[3] = ENCODE_AD(AQ_OP_RETK, 0, 2);
+    code[0] = ENCODE_ABC(AQ_OP_GSETKK, 1, 2, 0);
+    code[1] = ENCODE_AD(AQ_OP_GGETK, 0, 1);
+    code[2] = ENCODE_AD(AQ_OP_RETR, 0, 0);
     t->code = code;
 
     aq_closure_t *c = GC_NEW(aq, aq_closure_t);

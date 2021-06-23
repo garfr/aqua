@@ -29,6 +29,9 @@ aq_state_t *aq_init_state(aq_alloc_t alloc) {
     aq->syms.buckets = alloc(NULL, 0, sizeof(aq_sym_t *) * aq->syms.buckets_sz);
 
     aq->panic = NULL;
+
+    aq_tbl_t *tbl = aq_new_table(aq, 16);
+    aq->g = OBJ_ENCODE_TABLE(tbl);
     return aq;
 }
 
