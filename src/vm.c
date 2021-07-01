@@ -26,15 +26,21 @@
 #define MULI_OP(a, b) ((a) * (b))
 #define DIVI_OP(a, b) ((a) / (b))
 
-#define EQ_OP(a, b) obj_eq(a, b)
+#define EQ_OP(a, b)                                                            \
+    {                                                                          \
+        if (!obj_eq(a, b)) {                                                   \
+            insts++;                                                           \
+        }                                                                      \
+    }
+
 #define LT_OP(a, b) ((a) < (b))
 #define LTE_OP(a, b) ((a) <= (b))
 
 #define COMP_OP(aq, v1, v2, inst, op)                                          \
     {                                                                          \
-        if (OBJ_IS_INT(v1) && OBJ_IS_INT(v2)) {                                \
-            uint64_t vv1 = OBJ_DECODE_INT(v1);                                 \
-            uint64_t vv2 = OBJ_DECODE_INT(v2);                                 \
+        if (OBJ_IS_NUM(v1) && OBJ_IS_NUM(v2)) {                                \
+            double vv1 = OBJ_DECODE_NUM(v1);                                   \
+            double vv2 = OBJ_DECODE_NUM(v2);                                   \
             if (!op(vv1, vv2)) {                                               \
                 insts++;                                                       \
             }                                                                  \
@@ -50,10 +56,10 @@
 
 #define ARITH_OPS(aq, v1, v2, dest, op)                                        \
     {                                                                          \
-        if (OBJ_IS_INT(v1) && OBJ_IS_INT(v2)) {                                \
-            uint64_t vv1 = OBJ_DECODE_INT(v1);                                 \
-            uint64_t vv2 = OBJ_DECODE_INT(v2);                                 \
-            dest = OBJ_ENCODE_INT(op(vv1, vv2));                               \
+        if (OBJ_IS_NUM(v1) && OBJ_IS_NUM(v2)) {                                \
+            double vv1 = OBJ_DECODE_NUM(v1);                                   \
+            double vv2 = OBJ_DECODE_NUM(v2);                                   \
+            OBJ_ENCODE_NUM(dest, op(vv1, vv2));                                \
         } else {                                                               \
             aq_panic(aq, AQ_ERR_INVALID_ARITH);                                \
         }                                                                      \
@@ -77,13 +83,19 @@
         pair->tt = HEAP_PAIR;                                                  \
         pair->car = v1;                                                        \
         pair->cdr = v2;                                                        \
-        GET_RA(aq, inst) = OBJ_ENCODE_PAIR(pair);                              \
+        OBJ_ENCODE_PAIR(GET_RA(aq, inst), pair);                               \
     }
 
 size_t hash_obj(aq_obj_t obj) {
-    if (OBJ_IS_HEAP_ANY(obj)) {
-        return OBJ_DECODE_HEAP(obj, size_t);
-    } else if (OBJ_IS_SYM(obj)) {
+    switch (obj.t) {
+    case AQ_OBJ_CLOSURE:
+    case AQ_OBJ_BIGNUM:
+    case AQ_OBJ_PAIR:
+    case AQ_OBJ_TABLE:
+    case AQ_OBJ_ARRAY:
+    case AQ_OBJ_CONTIN:
+        return CAST(obj.v.h, size_t);
+    case AQ_OBJ_SYM: {
         size_t total = 0;
         aq_sym_t *sym = OBJ_DECODE_SYM(obj);
         for (size_t i = 0; i < sym->l; i++) {
@@ -95,26 +107,49 @@ size_t hash_obj(aq_obj_t obj) {
             }
         }
         return total;
-    } else if (OBJ_IS_INT(obj)) {
-        return OBJ_DECODE_INT(obj);
-    } else if (OBJ_IS_BOOL(obj)) {
-        return OBJ_DECODE_BOOL(obj);
-    } else if (OBJ_IS_NIL(obj)) {
-        return OBJ_NIL_VAL;
-    } else if (OBJ_IS_CHAR(obj)) {
-        return OBJ_DECODE_CHAR(obj);
     }
-    printf("internal error: unimplemented hash case\n");
-    exit(EXIT_FAILURE);
+    case AQ_OBJ_NUM:
+        return CAST(OBJ_DECODE_NUM(obj), size_t);
+    case AQ_OBJ_TRUE:
+        return 2;
+    case AQ_OBJ_FALSE:
+        return 1;
+    case AQ_OBJ_NIL:
+        return 0;
+    case AQ_OBJ_CHAR:
+        return OBJ_DECODE_CHAR(obj);
+    default:
+        printf("internal error: unimplemented hash case\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 bool obj_eq(aq_obj_t ob1, aq_obj_t ob2) {
-    return ob1 == ob2; /* this works for now as symbols are interned */
+    if (ob1.t != ob2.t)
+        return false;
+    switch (ob1.t) {
+    case AQ_OBJ_NIL:
+    case AQ_OBJ_TRUE:
+    case AQ_OBJ_FALSE:
+        return true;
+    case AQ_OBJ_NUM:
+        return ob1.v.n == ob2.v.n;
+    case AQ_OBJ_CHAR:
+        return ob1.v.c == ob2.v.c;
+    case AQ_OBJ_SYM:
+    case AQ_OBJ_CLOSURE:
+    case AQ_OBJ_PAIR:
+    case AQ_OBJ_CONTIN:
+    case AQ_OBJ_BIGNUM:
+    case AQ_OBJ_ARRAY:
+    case AQ_OBJ_TABLE:
+        return ob1.v.h == ob2.v.h;
+    }
 }
 
 aq_obj_t table_search(aq_state_t *aq, aq_obj_t tbl_obj, aq_obj_t key) {
     if (OBJ_IS_TABLE(tbl_obj)) {
-        aq_tbl_t *tbl = OBJ_DECODE_HEAP(tbl_obj, aq_tbl_t *);
+        aq_tbl_t *tbl = OBJ_DECODE_HEAP(tbl_obj, aq_tbl_t);
         size_t idx = hash_obj(key) % tbl->buckets_sz;
         for (aq_tbl_entry_t *entry = tbl->buckets[idx]; entry;
              entry = entry->n) {
@@ -122,15 +157,17 @@ aq_obj_t table_search(aq_state_t *aq, aq_obj_t tbl_obj, aq_obj_t key) {
                 return entry->v;
             }
         }
-        return OBJ_NIL_VAL;
+        aq_obj_t ret;
+        OBJ_ENCODE_NIL(ret);
+        return ret;
     }
     aq->panic(aq, AQ_ERR_NOT_TABLE);
-    return 0;
+    return tbl_obj; /* this will never be reached */
 }
 
 void table_set(aq_state_t *aq, aq_obj_t tbl_obj, aq_obj_t key, aq_obj_t val) {
     if (OBJ_IS_TABLE(tbl_obj)) {
-        aq_tbl_t *tbl = OBJ_DECODE_HEAP(tbl_obj, aq_tbl_t *);
+        aq_tbl_t *tbl = OBJ_DECODE_HEAP(tbl_obj, aq_tbl_t);
         size_t idx = hash_obj(key) % tbl->buckets_sz;
         for (aq_tbl_entry_t *entry = tbl->buckets[idx]; entry;
              entry = entry->n) {
@@ -169,7 +206,7 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
             GET_RA(aq, inst) = GET_KD(t, inst);
             break;
         case AQ_OP_NIL:
-            GET_RA(aq, inst) = OBJ_NIL_VAL;
+            OBJ_ENCODE_NIL(GET_RA(aq, inst));
             break;
 
         case AQ_OP_ADDRR:
@@ -243,7 +280,7 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
                 aq_panic(aq, AQ_ERR_NOT_PAIR);
             break;
         case AQ_OP_TABNEW:
-            GET_RA(aq, inst) = OBJ_ENCODE_TABLE(aq_new_table(aq, GET_D(inst)));
+            OBJ_ENCODE_TABLE(GET_RA(aq, inst), aq_new_table(aq, GET_D(inst)));
             break;
         case AQ_OP_TABGETR:
             GET_RA(aq, inst) =
@@ -290,16 +327,16 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
             break;
 
         case AQ_OP_EQRR:
-            COMPRR(aq, EQ_OP);
+            EQ_OP(GET_RA(aq, inst), GET_RB(aq, inst));
             break;
         case AQ_OP_EQRK:
-            COMPRK(aq, EQ_OP);
+            EQ_OP(GET_RA(aq, inst), GET_KB(t, inst));
             break;
         case AQ_OP_EQKR:
-            COMPKR(aq, EQ_OP);
+            EQ_OP(GET_KA(t, inst), GET_RB(aq, inst));
             break;
         case AQ_OP_EQKK:
-            COMPKK(aq, EQ_OP);
+            EQ_OP(GET_KA(t, inst), GET_KB(t, inst));
             break;
 
         case AQ_OP_LTRR:
@@ -349,9 +386,9 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
     aq_obj_t *lits =
         CAST(t_buf + sizeof(aq_template_t) + (sizeof(char) * t->name_sz),
              aq_obj_t *);
-    lits[0] = OBJ_ENCODE_INT(3);
-    lits[1] = OBJ_ENCODE_SYM(aq_intern_sym(aq, "thing", 5));
-    lits[2] = OBJ_ENCODE_INT(5);
+    OBJ_ENCODE_NUM(lits[0], 3.312);
+    OBJ_ENCODE_SYM(lits[1], aq_intern_sym(aq, "thing", 5));
+    OBJ_ENCODE_NUM(lits[2], 5.0);
     t->lits = lits;
 
     t->code_sz = 15;
@@ -367,5 +404,7 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
     aq_closure_t *c = GC_NEW(aq, aq_closure_t);
     c->t = t;
 
-    return aq_encode_closure(c);
+    aq_obj_t ret;
+    OBJ_ENCODE_CLOSURE(ret, c);
+    return ret;
 }

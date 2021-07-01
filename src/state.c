@@ -17,7 +17,7 @@ aq_state_t *aq_init_state(aq_alloc_t alloc) {
     aq->vars = alloc(NULL, 0, sizeof(aq_obj_t) * VARS_SZ);
     aq->vars_sz = VARS_SZ;
     for (size_t i = 0; i < aq->vars_sz; i++) {
-        aq->vars[i] = OBJ_NIL_VAL;
+        OBJ_ENCODE_NIL(aq->vars[i]);
     }
 
     aq->calls = alloc(NULL, 0, sizeof(aq_call_t) * CALLS_SZ);
@@ -31,7 +31,7 @@ aq_state_t *aq_init_state(aq_alloc_t alloc) {
     aq->panic = NULL;
 
     aq_tbl_t *tbl = aq_new_table(aq, 16);
-    aq->g = OBJ_ENCODE_TABLE(tbl);
+    OBJ_ENCODE_TABLE(aq->g, tbl);
     return aq;
 }
 

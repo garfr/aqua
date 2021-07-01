@@ -96,9 +96,9 @@ typedef enum {
     HEAP_TEMPLATE,
 } aq_heap_type_t;
 /* so that a structure can point to a generic heap object */
-typedef struct {
+struct aq_heap_obj_t {
     HEAP_OBJ_HEADER;
-} aq_heap_obj_t;
+};
 
 typedef struct {
     HEAP_OBJ_HEADER;

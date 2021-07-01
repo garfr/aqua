@@ -31,11 +31,14 @@ static void *libc_alloc(void *ptr, size_t old_sz, size_t new_sz) {
 static void print_obj_inner(aq_obj_t obj) {
     aq_obj_type_t typ = aq_get_type(obj);
     switch (typ) {
-    case AQ_OBJ_INT:
-        printf("%ld", aq_get_int(obj));
+    case AQ_OBJ_NUM:
+        printf("%f", aq_get_num(obj));
         return;
-    case AQ_OBJ_BOOL:
-        printf("#%c", aq_get_bool(obj) ? 't' : 'f');
+    case AQ_OBJ_TRUE:
+        printf("#t");
+        return;
+    case AQ_OBJ_FALSE:
+        printf("#f");
         return;
     case AQ_OBJ_CHAR:
         printf("'%c'", aq_get_char(obj));
