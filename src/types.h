@@ -5,14 +5,9 @@
 
 /* items to be included in all heap objects */
 #define HEAP_OBJ_HEADER                                                        \
-    uint8_t tt;                                                                \
+    struct aq_heap_obj_t *gc_forward;                                          \
+    uint8_t bit;                                                               \
     uint8_t mark
-
-typedef struct {
-    uint8_t *mem;
-    uint8_t *top;
-    size_t len;
-} aq_heap_t;
 
 /* the "template" for a function, instantiated as a closure */
 typedef struct {
@@ -76,12 +71,12 @@ struct aq_state_t {
     aq_call_t *cur_call;
 
     aq_alloc_t alloc;
-    aq_heap_t heap;
 
     aq_sym_tbl_t syms;
 
     aq_panic_t panic;
 
+    aq_heap_obj_t *gc_root;
     aq_obj_t g;
 };
 

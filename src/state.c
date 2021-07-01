@@ -12,7 +12,7 @@
 aq_state_t *aq_init_state(aq_alloc_t alloc) {
     aq_state_t *aq = alloc(NULL, 0, sizeof(aq_state_t));
     aq->alloc = alloc;
-    aq_init_heap(aq, &aq->heap, HEAP_SZ);
+    aq->gc_root = NULL;
 
     aq->vars = alloc(NULL, 0, sizeof(aq_obj_t) * VARS_SZ);
     aq->vars_sz = VARS_SZ;
@@ -38,8 +38,32 @@ aq_state_t *aq_init_state(aq_alloc_t alloc) {
 void aq_deinit_state(aq_state_t *aq) {
     aq->alloc(aq->vars, sizeof(aq_obj_t) * aq->vars_sz, 0);
     aq->alloc(aq->calls, sizeof(aq_call_t) * aq->calls_sz, 0);
+
+    aq_heap_obj_t *first, *follow;
+    for (first = aq->gc_root; first != NULL;) {
+        follow = first;
+        first = first->gc_forward;
+        if (follow->bit == HEAP_TABLE) {
+            aq_tbl_t *tbl = (aq_tbl_t *)follow;
+            for (size_t i = 0; i < tbl->buckets_sz; i++) {
+                aq_tbl_entry_t *tbl_follow, *tbl_first;
+                for (tbl_first = tbl->buckets[i]; tbl_first != NULL;) {
+                    tbl_follow = tbl_first;
+                    tbl_first = tbl_first->n;
+                    aq->alloc(tbl_follow, 0, 0);
+                }
+            }
+            aq->alloc(tbl->buckets, 0, 0);
+        } else if (follow->bit == HEAP_TEMPLATE) {
+            aq_template_t *t = (aq_template_t *)follow;
+            aq->alloc((void *)t->code, 0, 0);
+            aq->alloc((void *)t->lits, 0, 0);
+            aq->alloc((void *)t->name, 0, 0);
+        }
+        aq->alloc(follow, 0, 0);
+    }
+
     aq->alloc(aq->syms.buckets, sizeof(aq_sym_t *) * aq->syms.buckets_sz, 0);
-    aq_deinit_heap(aq, &aq->heap);
     aq->alloc(aq, sizeof(aq_state_t), 0);
 }
 
@@ -75,8 +99,8 @@ aq_sym_t *aq_intern_sym(aq_state_t *aq, const char *str, size_t sz) {
         if (sz == sym->l && strncmp(str, sym->s, sz) == 0)
             return sym;
     }
-    aq_sym_t *new_sym = GC_NEW_BYTES(aq, sizeof(aq_sym_t) + sz, aq_sym_t);
-    new_sym->tt = HEAP_SYM;
+    aq_sym_t *new_sym =
+        GC_NEW_BYTES(aq, sizeof(aq_sym_t) + sz, aq_sym_t, HEAP_SYM);
     new_sym->l = sz;
     memcpy(new_sym->s, str, sz);
     new_sym->next = aq->syms.buckets[idx];

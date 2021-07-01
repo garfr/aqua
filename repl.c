@@ -77,13 +77,10 @@ int main() {
     aq_state_t *aq = aq_init_state(libc_alloc);
     aq_set_panic(aq, error_handler);
 
-    printf("%ld bytes\n", aq_get_mem_used(aq));
-
     aq_obj_t fun = aq_init_test_closure(aq);
     aq_obj_t res = aq_execute_closure(aq, fun);
     print_obj(res);
 
-    printf("%ld bytes\n", aq_get_mem_used(aq));
     aq_deinit_state(aq);
     return 0;
 }

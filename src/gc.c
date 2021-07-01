@@ -7,22 +7,14 @@
 
 #define ALIGN(num) ((num) + HEAP_ALIGN - ((num) % HEAP_ALIGN))
 
-void aq_init_heap(aq_state_t *aq, aq_heap_t *hp, size_t heap_sz) {
-    hp->mem = aq->alloc(NULL, 0, heap_sz);
-    hp->len = heap_sz;
-    hp->top = hp->mem;
-}
-
-void aq_deinit_heap(aq_state_t *aq, aq_heap_t *hp) {
-    aq->alloc(hp->mem, hp->len, 0);
-}
-
-void *aq_gc_alloc(aq_state_t *aq, size_t amt) {
-    aq_heap_t *hp = &aq->heap;
-    if ((size_t)((hp->top + amt) - hp->mem) >= hp->len) {
+void *aq_gc_alloc(aq_state_t *aq, size_t amt, uint8_t bit) {
+    aq_heap_obj_t *ret = aq->alloc(NULL, 0, amt);
+    if (ret == NULL) {
         aq_panic(aq, AQ_ERR_OOM);
     }
-    uint8_t *ret = (uint8_t *)ALIGN((size_t)hp->top);
-    hp->top = ret + amt;
-    return ret;
+
+    ret->bit = bit;
+    ret->gc_forward = aq->gc_root;
+    aq->gc_root = ret;
+    return (void *)ret;
 }

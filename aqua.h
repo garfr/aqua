@@ -76,6 +76,4 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq);
 
 void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
 
-size_t aq_get_mem_used(aq_state_t *aq);
-
 #endif

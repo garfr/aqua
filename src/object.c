@@ -41,8 +41,7 @@ aq_obj_t aq_create_bool(bool b) {
 }
 
 aq_obj_t aq_create_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr) {
-    aq_pair_t *pair = GC_NEW(aq, aq_pair_t);
-    pair->tt = HEAP_PAIR;
+    aq_pair_t *pair = GC_NEW(aq, aq_pair_t, HEAP_PAIR);
     pair->car = car;
     pair->cdr = cdr;
     aq_obj_t obj;
@@ -84,12 +83,13 @@ aq_obj_type_t aq_get_type(aq_obj_t obj) {
 }
 
 aq_tbl_t *aq_new_table(aq_state_t *aq, size_t init_buckets) {
-    aq_tbl_t *tbl = GC_NEW(aq, aq_tbl_t);
+    aq_tbl_t *tbl = GC_NEW(aq, aq_tbl_t, HEAP_TABLE);
     if (init_buckets == 0) {
         init_buckets = 8;
     }
     tbl->buckets_sz = init_buckets;
     tbl->entries = 0;
-    tbl->buckets = GC_NEW_ARRAY(aq, aq_tbl_entry_t *, tbl->buckets_sz);
+    tbl->buckets =
+        aq->alloc(NULL, 0, sizeof(aq_tbl_entry_t *) * tbl->buckets_sz);
     return tbl;
 }

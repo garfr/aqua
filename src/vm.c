@@ -79,8 +79,7 @@
 
 #define CONS(aq, v1, v2)                                                       \
     {                                                                          \
-        aq_pair_t *pair = GC_NEW(aq, aq_pair_t);                               \
-        pair->tt = HEAP_PAIR;                                                  \
+        aq_pair_t *pair = GC_NEW(aq, aq_pair_t, HEAP_PAIR);                    \
         pair->car = v1;                                                        \
         pair->cdr = v2;                                                        \
         OBJ_ENCODE_PAIR(GET_RA(aq, inst), pair);                               \
@@ -369,39 +368,31 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
 }
 
 aq_obj_t aq_init_test_closure(aq_state_t *aq) {
-    uint8_t *t_buf =
-        GC_NEW_BYTES(aq,
-                     sizeof(aq_template_t) + (sizeof(aq_obj_t) * 3) +
-                         (sizeof(uint32_t) * 15),
-                     uint8_t);
-    aq_template_t *t = CAST(t_buf, aq_template_t *);
-    t->tt = HEAP_TEMPLATE;
+
+    aq_template_t *t = GC_NEW(aq, aq_template_t, HEAP_TEMPLATE);
+    t->bit = HEAP_TEMPLATE;
     t->name_sz = 4;
 
-    char *name = CAST(t_buf + sizeof(aq_template_t), char *);
+    char *name = aq->alloc(NULL, 0, sizeof(char) * 5);
     memcpy(name, "test", t->name_sz);
+    name[4] = 0;
     t->name = name;
 
     t->lits_sz = 3;
-    aq_obj_t *lits =
-        CAST(t_buf + sizeof(aq_template_t) + (sizeof(char) * t->name_sz),
-             aq_obj_t *);
+    aq_obj_t *lits = aq->alloc(NULL, 0, t->lits_sz * sizeof(aq_obj_t));
     OBJ_ENCODE_NUM(lits[0], 3.312);
     OBJ_ENCODE_SYM(lits[1], aq_intern_sym(aq, "thing", 5));
     OBJ_ENCODE_NUM(lits[2], 5.0);
     t->lits = lits;
 
     t->code_sz = 15;
-    uint32_t *code =
-        CAST(t_buf + sizeof(aq_template_t) + (sizeof(char) * t->name_sz) +
-                 (sizeof(aq_obj_t) * t->lits_sz),
-             uint32_t *);
+    uint32_t *code = aq->alloc(NULL, 0, t->code_sz * sizeof(uint32_t));
     code[0] = ENCODE_ABC(AQ_OP_GSETKK, 1, 2, 0);
     code[1] = ENCODE_AD(AQ_OP_GGETK, 0, 1);
     code[2] = ENCODE_AD(AQ_OP_RETR, 0, 0);
     t->code = code;
 
-    aq_closure_t *c = GC_NEW(aq, aq_closure_t);
+    aq_closure_t *c = GC_NEW(aq, aq_closure_t, HEAP_CLOSURE);
     c->t = t;
 
     aq_obj_t ret;
