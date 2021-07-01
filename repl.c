@@ -77,9 +77,19 @@ int main() {
     aq_state_t *aq = aq_init_state(libc_alloc);
     aq_set_panic(aq, error_handler);
 
-    aq_obj_t fun = aq_init_test_closure(aq);
-    aq_obj_t res = aq_execute_closure(aq, fun);
+    aq_var2(aq, fun, res);
+
+    fun = aq_init_test_closure(aq);
+
+    aq_collect_garbage(aq);
+
+    aq_release2(aq, fun, res);
+
+    res = aq_execute_closure(aq, fun);
+
     print_obj(res);
+
+    aq_collect_garbage(aq);
 
     aq_deinit_state(aq);
     return 0;

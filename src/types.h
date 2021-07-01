@@ -78,6 +78,11 @@ struct aq_state_t {
 
     aq_heap_obj_t *gc_root;
     aq_obj_t g;
+
+    /* variables frozen for the GC */
+    size_t frozen_sz;
+    aq_obj_t **frozen;
+    size_t frozen_cap;
 };
 
 typedef enum {
@@ -90,6 +95,7 @@ typedef enum {
     HEAP_SYM,
     HEAP_TEMPLATE,
 } aq_heap_type_t;
+
 /* so that a structure can point to a generic heap object */
 struct aq_heap_obj_t {
     HEAP_OBJ_HEADER;

@@ -8,6 +8,7 @@
 #define VARS_SZ 1024
 #define CALLS_SZ 1024
 #define BUCKETS_SZ 64
+#define FREEZE_SZ 9
 
 aq_state_t *aq_init_state(aq_alloc_t alloc) {
     aq_state_t *aq = alloc(NULL, 0, sizeof(aq_state_t));
@@ -30,6 +31,10 @@ aq_state_t *aq_init_state(aq_alloc_t alloc) {
 
     aq->panic = NULL;
 
+    aq->frozen = aq->alloc(NULL, 0, FREEZE_SZ * sizeof(aq_obj_t));
+    aq->frozen_cap = FREEZE_SZ;
+    aq->frozen_sz = 0;
+
     aq_tbl_t *tbl = aq_new_table(aq, 16);
     OBJ_ENCODE_TABLE(aq->g, tbl);
     return aq;
@@ -39,31 +44,10 @@ void aq_deinit_state(aq_state_t *aq) {
     aq->alloc(aq->vars, sizeof(aq_obj_t) * aq->vars_sz, 0);
     aq->alloc(aq->calls, sizeof(aq_call_t) * aq->calls_sz, 0);
 
-    aq_heap_obj_t *first, *follow;
-    for (first = aq->gc_root; first != NULL;) {
-        follow = first;
-        first = first->gc_forward;
-        if (follow->bit == HEAP_TABLE) {
-            aq_tbl_t *tbl = (aq_tbl_t *)follow;
-            for (size_t i = 0; i < tbl->buckets_sz; i++) {
-                aq_tbl_entry_t *tbl_follow, *tbl_first;
-                for (tbl_first = tbl->buckets[i]; tbl_first != NULL;) {
-                    tbl_follow = tbl_first;
-                    tbl_first = tbl_first->n;
-                    aq->alloc(tbl_follow, 0, 0);
-                }
-            }
-            aq->alloc(tbl->buckets, 0, 0);
-        } else if (follow->bit == HEAP_TEMPLATE) {
-            aq_template_t *t = (aq_template_t *)follow;
-            aq->alloc((void *)t->code, 0, 0);
-            aq->alloc((void *)t->lits, 0, 0);
-            aq->alloc((void *)t->name, 0, 0);
-        }
-        aq->alloc(follow, 0, 0);
-    }
+    aq_free_all(aq);
 
     aq->alloc(aq->syms.buckets, sizeof(aq_sym_t *) * aq->syms.buckets_sz, 0);
+    aq->alloc(aq->frozen, 0, 0);
     aq->alloc(aq, sizeof(aq_state_t), 0);
 }
 
@@ -106,4 +90,33 @@ aq_sym_t *aq_intern_sym(aq_state_t *aq, const char *str, size_t sz) {
     new_sym->next = aq->syms.buckets[idx];
     aq->syms.buckets[idx] = new_sym;
     return new_sym;
+}
+
+void aq_freeze_var(aq_state_t *aq, aq_obj_t *obj) {
+    for (size_t i = 0; i < aq->frozen_sz; i++) {
+        if (aq->frozen[i] == obj) {
+            return;
+        }
+    }
+
+    for (size_t i = 0; i < aq->frozen_sz; i++) {
+        if (aq->frozen[i] == NULL) {
+            aq->frozen[i] = obj;
+        }
+    }
+
+    if (aq->frozen_sz + 1 >= aq->frozen_cap) {
+        aq->frozen = aq->alloc(aq->frozen, aq->frozen_cap * sizeof(aq_obj_t *),
+                               aq->frozen_cap * 2 * sizeof(aq_obj_t *));
+        aq->frozen_cap *= 2;
+    }
+    aq->frozen[aq->frozen_sz++] = obj;
+}
+
+void aq_unfreeze_var(aq_state_t *aq, aq_obj_t *obj) {
+    for (size_t i = 0; i < aq->frozen_sz; i++) {
+        if (aq->frozen[i] == obj) {
+            aq->frozen[i] = NULL;
+        }
+    }
 }
