@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <setjmp.h>
+#include <string.h>
 
 #include "aqua.h"
 
@@ -77,24 +78,17 @@ int main() {
     aq_state_t *aq = aq_init_state(libc_alloc);
     aq_set_panic(aq, error_handler);
 
-    aq_var9(aq, sym1, sym2, p1, p2, p3, p4, p5, p6, res);
+    aq_var2(aq, form, res);
 
-    sym1 = aq_create_sym(aq, "+", 1);
-    sym2 = aq_create_sym(aq, "-", 1);
+    const char *str = "(+ 3.5 (- 3.4 1))";
+    form = aq_read_string(aq, str, strlen(str));
 
-    /* (- (+ 2.5 2.6) 3.0) */
-    p1 = aq_create_pair(aq, aq_create_num(2.5), aq_create_nil());
-    p2 = aq_create_pair(aq, aq_create_num(2.6), p1);
-    p3 = aq_create_pair(aq, sym1, p2);
-    p4 = aq_create_pair(aq, aq_create_num(3.0), aq_create_nil());
-    p5 = aq_create_pair(aq, p3, p4);
-    p6 = aq_create_pair(aq, sym2, p5);
-
-    res = aq_eval(aq, p6);
+    print_obj(form);
+    res = aq_eval(aq, form);
 
     aq_collect_garbage(aq);
 
-    aq_release9(aq, sym1, sym2, p1, p2, p3, p4, p5, p6, res);
+    aq_release2(aq, form, res);
 
     print_obj(res);
 

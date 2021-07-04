@@ -1,6 +1,7 @@
 #ifndef AQUA_H
 #define AQUA_H
 
+#include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -78,6 +79,9 @@ aq_obj_type_t aq_get_type(aq_obj_t obj);
 void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
 
 void aq_collect_garbage(aq_state_t *aq);
+
+aq_obj_t aq_read_file(aq_state_t *aq, FILE *file);
+aq_obj_t aq_read_string(aq_state_t *aq, const char *str, size_t sz);
 
 aq_obj_t aq_eval(aq_state_t *aq, aq_obj_t obj);
 

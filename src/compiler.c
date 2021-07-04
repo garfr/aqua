@@ -1,3 +1,5 @@
+#include <ctype.h>
+
 #include "compiler.h"
 #include "gc.h"
 #include "string.h"
@@ -32,6 +34,43 @@ typedef struct {
 } val_loc;
 
 typedef enum { ARITH_ADD, ARITH_SUB, ARITH_MUL, ARITH_DIV } arith_op;
+
+typedef enum {
+    TOK_OPEN_PAREN,
+    TOK_CLOSE_PAREN,
+    TOK_NUM,
+    TOK_SYM,
+    TOK_EOF
+} token_kind;
+
+typedef struct {
+    size_t start;
+    size_t end;
+    token_kind t;
+    union {
+        aq_sym_t *sym;
+        double num;
+    } v;
+} token;
+
+typedef struct {
+    bool needs_free;
+    const char *b;
+    size_t sz;
+    size_t s_pos;
+    size_t e_pos;
+
+    bool peekf;
+    token peek;
+} reader;
+
+static const char *sym_chars = "!$%&*+-.\\:<=>?@^_~";
+
+#define NEXT_C(reader) (reader->b[reader->e_pos++])
+#define PEEK_C(reader) (reader->b[reader->e_pos])
+#define SKIP_C(reader) (reader->e_pos++)
+#define IS_EOF(reader) (reader->e_pos >= reader->sz)
+#define RESET(reader) (reader->s_pos = reader->e_pos)
 
 void add_inst(aq_state_t *aq, comp_fn *fn, uint32_t inst) {
     if (fn->code_sz + 1 >= fn->code_cap) {
@@ -158,7 +197,6 @@ val_loc generate_form(aq_state_t *aq, aq_obj_t form, comp_fn *fn) {
         printf("cannot compile form %d\n", form.t);
         exit(EXIT_FAILURE);
     }
-    (void)form;
     aq_obj_t lit;
     OBJ_ENCODE_NUM(lit, 3.14159);
     return add_lit(aq, fn, lit);
@@ -211,4 +249,156 @@ aq_closure_t *compile_form(aq_state_t *aq, aq_obj_t form) {
 
     deinit_fn(aq, &global_fn);
     return c;
+}
+
+static void skip_whitespace(reader *rd) {
+    while (!IS_EOF(rd) && isspace(PEEK_C(rd)))
+        rd->e_pos++;
+    RESET(rd);
+}
+
+static inline token make_tok_inplace(reader *rd, token_kind t) {
+    token ret;
+    ret.t = t;
+    ret.start = rd->s_pos;
+    ret.end = rd->e_pos;
+    SKIP_C(rd);
+    RESET(rd);
+    return ret;
+}
+
+static inline token make_tok_behind(reader *rd, token_kind t) {
+    token ret;
+    ret.t = t;
+    ret.start = rd->s_pos;
+    ret.end = rd->e_pos;
+    RESET(rd);
+    return ret;
+}
+
+static token lex_num(aq_state_t *aq, reader *rd) {
+    (void)aq;
+    double num = 0;
+    while (!IS_EOF(rd) && isdigit(PEEK_C(rd)))
+        SKIP_C(rd);
+
+    if (!IS_EOF(rd) && PEEK_C(rd) == '.') {
+        SKIP_C(rd);
+        while (!IS_EOF(rd) && isdigit(PEEK_C(rd)))
+            SKIP_C(rd);
+    }
+
+    num = strtod(rd->b + rd->s_pos, NULL);
+
+    token ret = make_tok_behind(rd, TOK_NUM);
+    ret.v.num = num;
+    return ret;
+}
+
+static token lex_sym(aq_state_t *aq, reader *rd) {
+    int c;
+    while (!IS_EOF(rd) &&
+           (isalpha(c = PEEK_C(rd)) || strchr(sym_chars, c) != NULL)) {
+        SKIP_C(rd);
+    }
+    aq_sym_t *sym = aq_intern_sym(aq, &rd->b[rd->s_pos], rd->e_pos - rd->s_pos);
+    token ret = make_tok_behind(rd, TOK_SYM);
+    ret.v.sym = sym;
+    return ret;
+}
+
+static token get_token(aq_state_t *aq, reader *rd) {
+    skip_whitespace(rd);
+
+    if (IS_EOF(rd)) {
+        return make_tok_inplace(rd, TOK_EOF);
+    }
+    int c = PEEK_C(rd);
+    switch (c) {
+    case '(':
+        return make_tok_inplace(rd, TOK_OPEN_PAREN);
+    case ')':
+        return make_tok_inplace(rd, TOK_CLOSE_PAREN);
+    default:
+        break;
+    }
+    if (isalpha(c) || strchr(sym_chars, c) != NULL) {
+        return lex_sym(aq, rd);
+    }
+    if (isdigit(c)) {
+        return lex_num(aq, rd);
+    }
+    printf("invalid character '%c'\n", c);
+    exit(EXIT_FAILURE);
+}
+
+static token peek_token(aq_state_t *aq, reader *rd) {
+    if (rd->peekf) {
+        return rd->peek;
+    }
+    rd->peekf = true;
+    rd->peek = get_token(aq, rd);
+    return rd->peek;
+}
+
+static token next_token(aq_state_t *aq, reader *rd) {
+    if (rd->peekf) {
+        rd->peekf = false;
+        return rd->peek;
+    }
+    return get_token(aq, rd);
+}
+
+static aq_obj_t read_expr(aq_state_t *aq, reader *rd);
+
+static aq_obj_t read_list(aq_state_t *aq, reader *rd) {
+    aq_var4(aq, list, temp, rev1, rev2);
+
+    OBJ_ENCODE_NIL(list);
+
+    while (peek_token(aq, rd).t != TOK_CLOSE_PAREN) {
+        temp = read_expr(aq, rd);
+        list = aq_create_pair(aq, temp, list);
+    }
+
+    OBJ_ENCODE_NIL(rev1);
+    while (list.t != AQ_OBJ_NIL) {
+        rev2 = list;
+        list = OBJ_GET_CDR(list);
+        aq_pair_t *pair = (aq_pair_t *)rev2.v.h;
+        pair->cdr = rev1;
+        rev1 = rev2;
+    }
+
+    aq_release4(aq, list, temp, rev1, rev2);
+    return rev1;
+}
+
+static aq_obj_t read_expr(aq_state_t *aq, reader *rd) {
+    aq_obj_t ret;
+    token tok = next_token(aq, rd);
+    switch (tok.t) {
+    case TOK_SYM:
+        OBJ_ENCODE_SYM(ret, tok.v.sym);
+        return ret;
+    case TOK_NUM:
+        OBJ_ENCODE_NUM(ret, tok.v.num);
+        return ret;
+    case TOK_OPEN_PAREN:
+        return read_list(aq, rd);
+    default:
+        printf("invalid token %d\n", tok.t);
+        exit(EXIT_FAILURE);
+    }
+}
+
+aq_obj_t aq_read_string(aq_state_t *aq, const char *str, size_t sz) {
+    reader rd;
+    rd.needs_free = false;
+    rd.peekf = false;
+    rd.b = str;
+    rd.sz = sz;
+    rd.s_pos = rd.e_pos = 0;
+
+    return read_expr(aq, &rd);
 }
