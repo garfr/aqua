@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "dump.h"
 #include "vm.h"
 #include "object.h"
 #include "gc.h"
@@ -86,8 +87,7 @@
         OBJ_ENCODE_PAIR(GET_RA(aq, inst), pair);                               \
     }
 
-aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj) {
-    aq_closure_t *c = OBJ_DECODE_CLOSURE(obj);
+aq_obj_t aq_execute_closure(aq_state_t *aq, aq_closure_t *c) {
     aq_template_t *t = c->t;
 
     const uint32_t *insts = t->code;
@@ -304,7 +304,7 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
     OBJ_ENCODE_NUM(lits[2], 5.0);
     t->lits = lits;
 
-    t->code_sz = 15;
+    t->code_sz = 3;
     uint32_t *code = aq->alloc(NULL, 0, t->code_sz * sizeof(uint32_t));
     code[0] = ENCODE_AD(AQ_OP_GSETKK, 1, 0);
     code[1] = ENCODE_AD(AQ_OP_GGETK, 0, 1);
@@ -313,6 +313,8 @@ aq_obj_t aq_init_test_closure(aq_state_t *aq) {
 
     aq_closure_t *c = GC_NEW(aq, aq_closure_t, HEAP_CLOSURE);
     c->t = t;
+
+    aq_dump_closure(c, stdout);
 
     aq_obj_t ret;
     OBJ_ENCODE_CLOSURE(ret, c);

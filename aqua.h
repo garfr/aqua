@@ -75,12 +75,13 @@ const char *aq_get_sym(aq_obj_t obj, size_t *sz);
 
 aq_obj_type_t aq_get_type(aq_obj_t obj);
 
-aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj);
-aq_obj_t aq_init_test_closure(aq_state_t *aq);
-
 void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
 
 void aq_collect_garbage(aq_state_t *aq);
+
+aq_obj_t aq_eval(aq_state_t *aq, aq_obj_t obj);
+
+/*==========================================================================*/
 
 /* not to be called by users */
 void aq_freeze_var(aq_state_t *aq, aq_obj_t *obj);
