@@ -8,6 +8,7 @@
 void *aq_gc_alloc(aq_state_t *aq, size_t amt, uint8_t bit);
 
 void aq_free_all(aq_state_t *aq);
+
 #define GC_NEW(aq, type, bit) (CAST(aq_gc_alloc(aq, sizeof(type), bit), type *))
 
 #define GC_NEW_ARRAY(aq, type, nitems, bit)                                    \
@@ -17,4 +18,3 @@ void aq_free_all(aq_state_t *aq);
     (CAST(aq_gc_alloc(aq, bytes, bit), type *))
 
 #endif
-

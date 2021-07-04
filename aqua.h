@@ -52,6 +52,40 @@ void aq_deinit_state(aq_state_t *aq);
 
 void aq_print_version();
 
+aq_obj_t aq_create_char(uint32_t cp);
+aq_obj_t aq_create_num(double num);
+aq_obj_t aq_create_nil(void);
+aq_obj_t aq_create_bool(bool b);
+aq_obj_t aq_create_true();
+aq_obj_t aq_create_false();
+aq_obj_t aq_create_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr);
+aq_obj_t aq_create_sym(aq_state_t *aq, const char *str, size_t sz);
+aq_obj_t aq_create_table(aq_state_t *aq);
+
+aq_obj_t aq_table_get(aq_state_t *aq, aq_obj_t tbl, aq_obj_t key);
+void aq_table_set(aq_state_t *aq, aq_obj_t tbl, aq_obj_t key, aq_obj_t val);
+
+uint32_t aq_get_char(aq_obj_t obj);
+double aq_get_num(aq_obj_t obj);
+bool aq_get_bool(aq_obj_t obj);
+
+aq_obj_t aq_get_car(aq_obj_t obj);
+aq_obj_t aq_get_cdr(aq_obj_t obj);
+const char *aq_get_sym(aq_obj_t obj, size_t *sz);
+
+aq_obj_type_t aq_get_type(aq_obj_t obj);
+
+aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj);
+aq_obj_t aq_init_test_closure(aq_state_t *aq);
+
+void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
+
+void aq_collect_garbage(aq_state_t *aq);
+
+/* not to be called by users */
+void aq_freeze_var(aq_state_t *aq, aq_obj_t *obj);
+void aq_unfreeze_var(aq_state_t *aq, aq_obj_t *obj);
+
 #define aq_declare_var(aq, name)                                               \
     aq_obj_t name;                                                             \
     name.t = AQ_OBJ_NIL;                                                       \
@@ -113,35 +147,5 @@ void aq_print_version();
                     name8, name9)                                              \
     aq_release8(aq, name1, name2, name3, name4, name5, name6, name7, name8);   \
     aq_release_var(aq, name9)
-
-aq_obj_t aq_create_char(uint32_t cp);
-aq_obj_t aq_create_num(double num);
-aq_obj_t aq_create_nil(void);
-aq_obj_t aq_create_bool(bool b);
-aq_obj_t aq_create_true();
-aq_obj_t aq_create_false();
-aq_obj_t aq_create_pair(aq_state_t *aq, aq_obj_t car, aq_obj_t cdr);
-aq_obj_t aq_create_sym(aq_state_t *aq, const char *str, size_t sz);
-
-uint32_t aq_get_char(aq_obj_t obj);
-double aq_get_num(aq_obj_t obj);
-bool aq_get_bool(aq_obj_t obj);
-
-aq_obj_t aq_get_car(aq_obj_t obj);
-aq_obj_t aq_get_cdr(aq_obj_t obj);
-const char *aq_get_sym(aq_obj_t obj, size_t *sz);
-
-aq_obj_type_t aq_get_type(aq_obj_t obj);
-
-aq_obj_t aq_execute_closure(aq_state_t *aq, aq_obj_t obj);
-aq_obj_t aq_init_test_closure(aq_state_t *aq);
-
-void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
-
-void aq_collect_garbage(aq_state_t *aq);
-
-/* not to be called by users */
-void aq_freeze_var(aq_state_t *aq, aq_obj_t *obj);
-void aq_unfreeze_var(aq_state_t *aq, aq_obj_t *obj);
 
 #endif

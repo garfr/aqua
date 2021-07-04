@@ -61,7 +61,12 @@
 #define OBJ_GET_CAR(obj) (OBJ_DECODE_PAIR(obj)->car)
 #define OBJ_GET_CDR(obj) (OBJ_DECODE_PAIR(obj)->cdr)
 
-aq_tbl_t *aq_new_table(aq_state_t *state, size_t init_buckets);
+#define OBJ_IS_TRUTHY(obj) ((obj).t != AQ_OBJ_NIL && (obj).t != AQ_OBJ_FALSE)
+
+aq_tbl_t *aq_new_table(aq_state_t *aq, size_t init_buckets);
+aq_obj_t aq_create_table(aq_state_t *aq);
+aq_obj_t aq_table_get(aq_state_t *aq, aq_obj_t tbl, aq_obj_t key);
+void aq_table_set(aq_state_t *aq, aq_obj_t tbl, aq_obj_t key, aq_obj_t val);
+bool obj_eq(aq_obj_t ob1, aq_obj_t ob2);
 
 #endif
-

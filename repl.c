@@ -77,13 +77,18 @@ int main() {
     aq_state_t *aq = aq_init_state(libc_alloc);
     aq_set_panic(aq, error_handler);
 
-    aq_var2(aq, fun, res);
+    aq_var4(aq, fun, res, tbl, sym);
 
     fun = aq_init_test_closure(aq);
 
+    sym = aq_create_sym(aq, "fun", 3);
+
+    tbl = aq_create_table(aq);
+    aq_table_set(aq, tbl, sym, fun);
+
     aq_collect_garbage(aq);
 
-    aq_release2(aq, fun, res);
+    aq_release4(aq, fun, res, tbl, sym);
 
     res = aq_execute_closure(aq, fun);
 

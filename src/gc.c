@@ -99,6 +99,20 @@ void free_table(aq_state_t *aq, aq_tbl_t *tbl) {
     aq->alloc(tbl->buckets, 0, 0);
 }
 
+void dispense_obj(aq_state_t *aq, aq_heap_obj_t *obj) {
+    switch (obj->bit) {
+    case HEAP_TEMPLATE:
+        free_template(aq, (aq_template_t *)obj);
+        break;
+    case HEAP_TABLE:
+        free_table(aq, (aq_tbl_t *)obj);
+        break;
+    default:
+        break;
+    }
+    aq->alloc(obj, 0, 0);
+}
+
 void aq_collect_garbage(aq_state_t *aq) {
     /* start with the variable stack */
     for (size_t i = 0; i < aq->vars_sz; i++) {
@@ -122,27 +136,16 @@ void aq_collect_garbage(aq_state_t *aq) {
     while (first != NULL) {
         /* for now don't free symbols */
         if (first->mark == 0 && first->bit != HEAP_SYM) {
-            printf("freeing %d\n", first->bit);
             if (follow != NULL) {
                 follow->gc_forward = first->gc_forward;
                 temp = first;
                 first = first->gc_forward;
-                switch (temp->bit) {
-                case HEAP_TEMPLATE:
-                    free_template(aq, (aq_template_t *)temp);
-                    break;
-                case HEAP_TABLE:
-                    free_table(aq, (aq_tbl_t *)temp);
-                    break;
-                default:
-                    break;
-                }
-                aq->alloc(temp, 0, 0);
+                dispense_obj(aq, temp);
             } else {
                 aq->gc_root = first->gc_forward;
                 temp = first;
                 first = first->gc_forward;
-                aq->alloc(temp, 0, 0);
+                dispense_obj(aq, temp);
             }
         } else {
             follow = first;

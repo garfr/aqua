@@ -108,73 +108,10 @@ typedef struct {
 } aq_pair_t;
 
 typedef enum {
-    AQ_OP_RETR,
-    AQ_OP_RETK,
-
-    AQ_OP_MOVR,
-    AQ_OP_MOVK,
-
-    AQ_OP_NIL,
-
-    AQ_OP_ADDRR,
-    AQ_OP_SUBRR,
-    AQ_OP_MULRR,
-    AQ_OP_DIVRR,
-    AQ_OP_CONSRR,
-
-    AQ_OP_ADDRK,
-    AQ_OP_SUBRK,
-    AQ_OP_MULRK,
-    AQ_OP_DIVRK,
-    AQ_OP_CONSRK,
-
-    AQ_OP_ADDKK,
-    AQ_OP_SUBKK,
-    AQ_OP_MULKK,
-    AQ_OP_DIVKK,
-    AQ_OP_CONSKK,
-
-    AQ_OP_SUBKR,
-    AQ_OP_DIVKR,
-    AQ_OP_CONSKR,
-
-    AQ_OP_CAR,
-    AQ_OP_CDR,
-
-    AQ_OP_TABNEW,
-
-    AQ_OP_TABSETRR,
-    AQ_OP_TABSETKR,
-    AQ_OP_TABSETRK,
-    AQ_OP_TABSETKK,
-
-    AQ_OP_TABGETR,
-    AQ_OP_TABGETK,
-
-    AQ_OP_JMP,
-
-    AQ_OP_EQRR,
-    AQ_OP_EQKR,
-    AQ_OP_EQRK,
-    AQ_OP_EQKK,
-
-    AQ_OP_LTRR,
-    AQ_OP_LTKR,
-    AQ_OP_LTRK,
-    AQ_OP_LTKK,
-
-    AQ_OP_LTERR,
-    AQ_OP_LTEKR,
-    AQ_OP_LTERK,
-    AQ_OP_LTEKK,
-
-    AQ_OP_GGETR,
-    AQ_OP_GGETK,
-
-    AQ_OP_GSETRR,
-    AQ_OP_GSETRK,
-    AQ_OP_GSETKR,
-    AQ_OP_GSETKK,
+#define OP_USAGE(name, _) AQ_OP_##name,
+#include "ops.h"
+#undef OP_USAGE
+    AQ_OP_BURNER /* to avoid comma at the end of enum list */
 } aq_op_t;
 
 #define ENCODE_ABC(op, a, b, c)                                                \
@@ -184,5 +121,11 @@ typedef enum {
 #define ENCODE_AD(op, a, d)                                                    \
     ((((uint8_t)(op & 0xFF)) << 24) +                                          \
      (((uint8_t)(a & 0xFF) << 16) + ((uint8_t)(d & 0xFFFF))))
+
+#define GET_OP(inst) ((inst) >> 24)
+#define GET_A(inst) (((inst) >> 16) & 0xFF)
+#define GET_B(inst) (((inst) >> 8) & 0xFF)
+#define GET_C(inst) (inst & 0xFF)
+#define GET_D(inst) (inst & 0xFFFF)
 
 #endif

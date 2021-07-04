@@ -119,71 +119,73 @@ Literals (integers, strings, symbols) are placed in an array and can be loaded i
 
 ## Operations
 
-* OP_RETR - returns the value of R(A)
-* OP_RETK : offset encoding - returns the value of K(D)
+* OP_RETR - AD - returns the value of R(D)
+* OP_RETK - AD - offset encoding - returns the value of K(D)
 
-* OP_MOVR - moves R(B) into R(A)
-* OP_MOVK : offset encoding - moves K(D) into R(A)
+* OP_MOVR - AD - moves R(D) into R(A)
+* OP_MOVK - AD - moves K(D) into R(A)
 
-* OP_NIL - moves the value nil into R(A)
+* OP_NIL - AD - moves the value nil into R(D)
 
+* OP_ADDRR - ABC - stores the result of adding R(B) and R(C) into R(A)
+* OP_SUBRR - ABC - stores the result of subtracting R(B) and R(C) into R(A)
+* OP_MULRR - ABC - stores the result of multiplying R(B) and R(C) into R(A)
+* OP_DIVRR - ABC - stores the result of dividing R(B) and R(C) into R(A)
 
-* OP_ADDRR - stores the result of adding R(B) and R(C) into R(A)
-* OP_SUBRR - stores the result of subtracting R(B) and R(C) into R(A)
-* OP_MULRR - stores the result of multiplying R(B) and R(C) into R(A)
-* OP_DIVRR - stores the result of dividing R(B) and R(C) into R(A)
-* OP_CONSRR - creates a new pair stored in R(A) with R(B) and R(C) as car and cdr
+* OP_ADDRK - ABC - stores the result of adding R(B) and K(C) into R(A)
+* OP_SUBRK - ABC - stores the result of subtracting R(B) and K(C) into R(A)
+* OP_MULRK - ABC - stores the result of multiplying R(B) and K(C) into R(A)
+* OP_DIVRK - ABC - stores the result of dividing R(B) and K(C) into R(A)
 
-* OP_ADDRK - stores the result of adding R(B) and K(C) into R(A)
-* OP_MULRK - stores the result of multiplying R(B) and K(C) into R(A)
-* OP_SUBRK - stores the result of subtracting R(B) and K(C) into R(A)
-* OP_DIVRK - stores the result of dividing R(B) and K(C) into R(A)
-* OP_CONSRK - creates a new pair stored in R(A) with R(B) and K(C) as car and cdr
+* OP_ADDKR - ABC - stores the result of adding K(B) and R(C) into R(A)
+* OP_SUBKR - ABC - stores the result of subtracting K(B) and R(C) into R(A)
+* OP_MULKR - ABC - stores the result of multiplying K(B) and R(C) into R(A)
+* OP_DIVKR - ABC - stores the result of dividing K(B) and R(C) into R(A)
 
-* OP_SUBKR - stores the result of subtracting K(B) and R(C) into R(A)
-* OP_DIVKR - stores the result of dividing K(B) and R(C) into R(A)
-* OP_CONSKR - creates a new pair stored in R(A) with K(B) and R(C) as car and cdr
+* OP_ADDKK - ABC - stores the result of adding K(B) and K(C) into R(A)
+* OP_MULKK - ABC - stores the result of multiplying K(B) and K(C) into R(A)
+* OP_SUBKK - ABC - stores the result of subtracting K(B) and K(C) into R(A)
+* OP_DIVKK - ABC - stores the result of dividing K(B) and K(C) into R(A)
 
-* OP_ADDKK - stores the result of adding K(B) and K(C) into R(A)
-* OP_MULKK - stores the result of multiplying K(B) and K(C) into R(A)
-* OP_SUBKK - stores the result of subtracting K(B) and K(C) into R(A)
-* OP_DIVKK - stores the result of dividing K(B) and K(C) into R(A)
-* OP_CONSKK - creates a new pair stored in K(A) with K(B) and R(C) as car and cdr
+* OP_CONSRR - ABC - creates a new pair stored in R(A) with R(B) and R(C) as car and cdr
+* OP_CONSRK - ABC - creates a new pair stored in R(A) with R(B) and K(C) as car and cdr
+* OP_CONSKR - ABC - creates a new pair stored in R(A) with K(B) and R(C) as car and cdr
+* OP_CONSKK - ABC - creates a new pair stored in K(A) with K(B) and R(C) as car and cdr
 
-* OP_CAR - stores the car of R(B) in R(A)
-* OP_CDR - stores the cdr of R(B) in R(A)
+* OP_CAR - AD - stores the car of R(D) in R(A)
+* OP_CDR - AD - stores the cdr of R(D) in R(A)
 
-* OP_TABNEW : offset encoding - creates a new table and places it in R(A), with at least R(D) buckets
-* OP_TABSETRR - adds to the table in R(A) an entry with key R(B) and value R(C)
-* OP_TABSETRK - adds to the table in R(A) an entry with key R(B) and value K(C)
-* OP_TABSETKR - adds to the table in R(A) an entry with key K(B) and value R(C)
-* OP_TABSETKK - adds to the table in R(A) an entry with key K(B) and value K(C)
-* OP_TABGETR - sets R(A) to the value of the table in R(B) indexed by R(C)
-* OP_TABGETK - sets R(A) to the value of the table in R(B) indexed by K(C)
+* OP_TABNEW - AD - creates a new table and places it in R(A), with at least R(D) buckets
 
-* OP_LOADK : offset encoding - loads literal indexed by D into R(A)
+* OP_TABGETR - ABC - sets R(A) to the value of the table in R(B) indexed by R(C)
+* OP_TABGETK - ABC - sets R(A) to the value of the table in R(B) indexed by K(C)
 
-All conditional operators **do not** skip an instruction if they are true
-* OP_EQRR - R(A) equals R(B)
-* OP_EQRK - R(A) equals K(B)
-* OP_EQKR - K(A) equals R(B)
-* OP_EQKK - K(A) equals K(B)
-* OP_LTRR - R(A) is less than R(B)
-* OP_LTRK - R(A) is less than K(B)
-* OP_LTKR - K(A) is less than R(B)
-* OP_LTKK - K(A) is less than K(B)
-* OP_LTERR - R(A) less than or equal to R(B)
-* OP_LTERK - R(A) less than or equal to K(B)
-* OP_LTEKR - K(A) less than or equal to R(B)
-* OP_LTEKK - K(A) less than or equal to K(B)
+* OP_TABSETRR - ABC - adds to the table in R(A) an entry with key R(B) and value R(C)
+* OP_TABSETRK - ABC - adds to the table in R(A) an entry with key R(B) and value K(C)
+* OP_TABSETKR - ABC - to the table in R(A) an entry with key K(B) and value R(C)
+* OP_TABSETKK - ABC - adds to the table in R(A) an entry with key K(B) and value K(C)
 
-* OP_JMP : offset encoding - unconditionally jumps D instructions, forward is A is 0, backwards if 1
+* OP_EQRR - ABC - R(A) is set to R(B) == R(C) 
+* OP_EQRK - ABC - R(A) is set to R(B) == K(C) 
+* OP_EQKK - ABC - R(A) is set to K(B) == K(C) 
 
-* OP_GGETR : sets R(A) to the value indexed in the global table by R(B)
-* OP_GGETK : sets R(A) to the value indexed in the global table by K(B)
+* OP_LTRR - ABC - R(A) is set to R(B < R(B)
+* OP_LTRK - ABC - R(A) is set to R(B < K(B)
+* OP_LTKR - ABC - R(A) is set to K(B < R(B)
+* OP_LTKK - ABC - R(A) is set to K(B < K(B)
 
-* OP_GSETRR : sets the table value in the global table with key R(A) and val R(B)
-* OP_GSETKR : sets the table value in the global table with key K(A) and val R(B)
-* OP_GSETRK : sets the table value in the global table with key R(A) and val K(B)
-* OP_GSETKK : sets the table value in the global table with key K(A) and val K(B)
+* OP_LTERR - ABC - R(A) is set to R(B <= R(B)
+* OP_LTERK - ABC - R(A) is set to R(B <= K(B)
+* OP_LTEKR - ABC - R(A) is set to K(B <= R(B)
+* OP_LTEKK - ABC - R(A) is set to K(B <= K(B)
 
+* OP_JMPF - AD - jumps D instructions forward if A evaluates to truthy
+* OP_JMPB - AD - jumps D instructions back if A evaluates to truthy
+
+* OP_GGETR - AD - sets R(A) to the value indexed in the global table by R(D)
+* OP_GGETK - AD -  sets R(A) to the value indexed in the global table by K(D)
+
+* OP_GSETRR - AD - sets the table value in the global table with key R(A) and val R(D)
+* OP_GSETKR - AD - sets the table value in the global table with key K(A) and val R(D)
+* OP_GSETRK - AD - sets the table value in the global table with key R(A) and val K(D)
+* OP_GSETKK - AD - sets the table value in the global table with key K(A) and val K(D)
