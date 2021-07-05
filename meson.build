@@ -19,9 +19,17 @@ aqualib = library(
   include_directories : [inc]
 )
 
-aqua = executable(
-  'aqua',
-  'repl.c',
+aquarepl = executable(
+  'aquarepl',
+  'aquarepl.c',
+  c_args : ['-Wextra', '-Werror', '-g', '-std=c99', '-pedantic'],
+  link_with : aqualib,
+  include_directories : [inc]
+)
+
+aquaexec = executable(
+  'aquaexec',
+  'aquaexec.c',
   c_args : ['-Wextra', '-Werror', '-g', '-std=c99', '-pedantic'],
   link_with : aqualib,
   include_directories : [inc]

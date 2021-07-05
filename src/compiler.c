@@ -64,7 +64,7 @@ typedef struct {
     token peek;
 } reader;
 
-static const char *sym_chars = "!$%&*+-.\\:<=>?@^_~";
+static const char *sym_chars = "!$%&*+-./:<=>?@^_~";
 
 #define NEXT_C(reader) (reader->b[reader->e_pos++])
 #define PEEK_C(reader) (reader->b[reader->e_pos])
@@ -401,4 +401,30 @@ aq_obj_t aq_read_string(aq_state_t *aq, const char *str, size_t sz) {
     rd.s_pos = rd.e_pos = 0;
 
     return read_expr(aq, &rd);
+}
+
+aq_obj_t aq_read_file(aq_state_t *aq, const char *filename) {
+    reader rd;
+    rd.needs_free = true;
+    rd.peekf = false;
+
+    FILE *f = fopen(filename, "r");
+    if (f == NULL) {
+        aq_panic(aq, AQ_ERR_INVALID_FILENAME);
+    }
+
+    fseek(f, 0, SEEK_END);
+    size_t len = ftell(f);
+    rewind(f);
+
+    char *str = aq->alloc(NULL, 0, sizeof(char) * len);
+    fread(str, 1, len, f);
+    fclose(f);
+
+    rd.b = str;
+    rd.sz = len;
+    rd.s_pos = rd.e_pos = 0;
+    aq_obj_t ret = read_expr(aq, &rd);
+    aq->alloc(str, 0, 0);
+    return ret;
 }

@@ -10,6 +10,7 @@ static const char *err_names[] = {
     [AQ_ERR_INVALID_ARITH] = "Invalid Arithmetic (Type Error)",
     [AQ_ERR_NOT_PAIR] = "Not Pair (Type Error)",
     [AQ_ERR_NOT_TABLE] = "Not Table (Type Error)",
+    [AQ_ERR_INVALID_FILENAME] = "Invalid Filename",
 };
 
 static int error_handler(aq_state_t *aq, aq_err_t err) {
@@ -80,8 +81,7 @@ int main() {
 
     aq_var2(aq, form, res);
 
-    const char *str = "(+ 3.5 (- 3.4 1))";
-    form = aq_read_string(aq, str, strlen(str));
+    form = aq_read_file(aq, "test.scm");
 
     print_obj(form);
     res = aq_eval(aq, form);
