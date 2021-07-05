@@ -1,6 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <setjmp.h>
+
 #include "aqua.h"
 
 /* items to be included in all heap objects */
@@ -83,6 +85,9 @@ struct aq_state_t {
     size_t frozen_sz;
     aq_obj_t **frozen;
     size_t frozen_cap;
+
+    /* state needed for reporting compiler errors */
+    const char *compiler_err;
 };
 
 typedef enum {

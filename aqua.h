@@ -19,6 +19,7 @@ typedef enum {
     AQ_ERR_NOT_TABLE,
     AQ_ERR_INVALID_COMP,
     AQ_ERR_INVALID_FILENAME,
+    AQ_ERR_SYNTAX
 } aq_err_t;
 
 typedef int (*aq_panic_t)(aq_state_t *, aq_err_t err);
@@ -81,8 +82,9 @@ void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
 
 void aq_collect_garbage(aq_state_t *aq);
 
-aq_obj_t aq_read_file(aq_state_t *aq, const char *str);
-aq_obj_t aq_read_string(aq_state_t *aq, const char *str, size_t sz);
+const char *aq_read_file(aq_state_t *aq, const char *str, aq_obj_t *out);
+const char *aq_read_string(aq_state_t *aq, const char *str, size_t sz,
+                           aq_obj_t *out);
 
 aq_obj_t aq_eval(aq_state_t *aq, aq_obj_t obj);
 
@@ -90,6 +92,8 @@ aq_obj_t aq_eval(aq_state_t *aq, aq_obj_t obj);
 aq_obj_t aq_compile_form(aq_state_t *aq, aq_obj_t obj);
 
 void aq_print_closure(aq_state_t *aq, aq_obj_t obj, FILE *file);
+
+const char *aq_get_err_msg(aq_state_t *aq);
 
 void aq_display(aq_state_t *aq, aq_obj_t obj, FILE *file);
 

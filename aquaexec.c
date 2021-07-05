@@ -17,6 +17,24 @@ static void *libc_alloc(void *ptr, size_t old_sz, size_t new_sz) {
     }
 }
 
+static const char *err_names[] = {
+    [AQ_ERR_OOM] = "Out of Memory",
+    [AQ_ERR_INVALID_ARITH] = "Invalid Arithmetic (Type Error)",
+    [AQ_ERR_NOT_PAIR] = "Not Pair (Type Error)",
+    [AQ_ERR_NOT_TABLE] = "Not Table (Type Error)",
+    [AQ_ERR_INVALID_FILENAME] = "Invalid Filename",
+    [AQ_ERR_SYNTAX] = "Syntax Error",
+};
+
+static int error_handler(aq_state_t *aq, aq_err_t err) {
+    (void)aq;
+    printf("Err: %s\n", err_names[err]);
+
+    if (err == AQ_ERR_SYNTAX)
+        fprintf(stderr, "error: %s\n", aq_get_err_msg(aq));
+    return 1;
+}
+
 int main(int argc, const char *argv[]) {
     if (argc < 2) {
         printf("format: ./aquaexec (filename) [flags]\n");
@@ -32,10 +50,16 @@ int main(int argc, const char *argv[]) {
     }
 
     aq_state_t *aq = aq_init_state(libc_alloc);
+    aq_set_panic(aq, error_handler);
 
     aq_var2(aq, file, closure);
 
-    file = aq_read_file(aq, argv[1]);
+    const char *str = aq_read_file(aq, argv[1], &file);
+    if (str != NULL) {
+        fprintf(stderr, "%s\n", str);
+        return EXIT_FAILURE;
+    }
+
     aq_display(aq, file, stdout);
 
     if (dump_bc) {

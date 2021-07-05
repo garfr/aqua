@@ -45,8 +45,7 @@ typedef enum {
 } token_kind;
 
 typedef struct {
-    size_t start;
-    size_t end;
+    size_t l;
     token_kind t;
     union {
         aq_sym_t *sym;
@@ -58,6 +57,7 @@ typedef struct {
     bool needs_free;
     const char *b;
     size_t sz;
+    size_t l;
     size_t s_pos;
     size_t e_pos;
 
@@ -80,6 +80,43 @@ void add_inst(aq_state_t *aq, comp_fn *fn, uint32_t inst) {
         fn->code_cap *= 2;
     }
     fn->code[fn->code_sz++] = inst;
+}
+
+int vasprintf(aq_state_t *aq, char **str, const char *fmt, va_list args) {
+    int size = 0;
+    va_list tmpa;
+    va_copy(tmpa, args);
+    size = vsnprintf(NULL, 0, fmt, tmpa);
+    va_end(tmpa);
+    if (size < 0)
+        return -1;
+    *str = aq->alloc(NULL, 0, size + 1);
+    if (NULL == *str)
+        return -1;
+    size = vsprintf(*str, fmt, args);
+    return size;
+}
+
+int asprintf(aq_state_t *aq, char **str, const char *fmt, ...) {
+    int size = 0;
+    va_list args;
+    va_start(args, fmt);
+    size = vasprintf(aq, str, fmt, args);
+    va_end(args);
+    return size;
+}
+
+void __attribute__((noreturn))
+log_err(aq_state_t *aq, size_t line, const char *str) {
+    char *msg;
+    if (line != 0)
+        asprintf(aq, &msg, "%d: %s", line, str);
+    else
+        asprintf(aq, &msg, "%s", str);
+
+    aq->compiler_err = msg;
+    aq_panic(aq, AQ_ERR_SYNTAX);
+    exit(EXIT_FAILURE);
 }
 
 val_loc add_lit(aq_state_t *aq, comp_fn *fn, aq_obj_t obj) {
@@ -156,8 +193,7 @@ val_loc generate_form(aq_state_t *aq, aq_obj_t form, comp_fn *fn);
 
 val_loc generate_display(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
     if (args.t != AQ_OBJ_PAIR) {
-        printf("invalid arguments to display\n");
-        exit(EXIT_FAILURE);
+        log_err(aq, 0, "builtin function 'display' takes 1 argument");
     }
 
     val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
@@ -175,31 +211,26 @@ static uint8_t cons_op_lookup[2][2] = {
 };
 
 val_loc generate_cons(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
-    if (args.t != AQ_OBJ_PAIR && OBJ_GET_CDR(args).t != AQ_OBJ_PAIR) {
-        printf("invalid arguments to cons\n");
-        exit(EXIT_FAILURE);
+    if (args.t == AQ_OBJ_PAIR && OBJ_GET_CDR(args).t == AQ_OBJ_PAIR) {
+        val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
+        val_loc loc2 = generate_form(aq, OBJ_GET_CAR(OBJ_GET_CDR(args)), fn);
+        val_loc ret = {LOC_REG, fn->next_reg++};
+        add_inst(aq, fn,
+                 ENCODE_ABC(cons_op_lookup[loc1.t][loc2.t], ret.idx, loc1.idx,
+                            loc2.idx));
+        return ret;
     }
-
-    val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
-    val_loc loc2 = generate_form(aq, OBJ_GET_CAR(OBJ_GET_CDR(args)), fn);
-    val_loc ret = {LOC_REG, fn->next_reg++};
-    add_inst(aq, fn,
-             ENCODE_ABC(cons_op_lookup[loc1.t][loc2.t], ret.idx, loc1.idx,
-                        loc2.idx));
-
-    return ret;
+    log_err(aq, 0, "builtin function 'cons' takes 2 arguments");
 }
 
 val_loc generate_carcdr(aq_state_t *aq, aq_obj_t args, int car, comp_fn *fn) {
     if (args.t != AQ_OBJ_PAIR) {
-        printf("invalid arguments to car\n");
-        exit(EXIT_FAILURE);
+        log_err(aq, 0, "builtin functions car and cdr take 1 argument");
     }
 
     val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
     if (loc1.t != LOC_REG) {
-        printf("type error: taking car/cdr of non-pair object\n");
-        exit(EXIT_FAILURE);
+        log_err(aq, 0, "cannot take car/cdr of non-pair object");
     }
 
     val_loc ret = {LOC_REG, fn->next_reg++};
@@ -211,7 +242,7 @@ val_loc generate_carcdr(aq_state_t *aq, aq_obj_t args, int car, comp_fn *fn) {
 val_loc generate_arith(aq_state_t *aq, arith_op op, aq_obj_t args,
                        comp_fn *fn) {
     if (args.t != AQ_OBJ_PAIR && OBJ_GET_CDR(args).t != AQ_OBJ_PAIR) {
-        printf("invalid arguments to arithmetic op\n");
+        log_err(aq, 0, "arithmetic ops take 2 arguments");
         exit(EXIT_FAILURE);
     }
     val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
@@ -257,8 +288,7 @@ val_loc generate_form(aq_state_t *aq, aq_obj_t form, comp_fn *fn) {
     case AQ_OBJ_PAIR:
         return generate_funcall(aq, OBJ_GET_CAR(form), OBJ_GET_CDR(form), fn);
     default:
-        printf("cannot compile form %d\n", form.t);
-        exit(EXIT_FAILURE);
+        log_err(aq, 0, "expected valid form in expression");
     }
     aq_obj_t lit;
     OBJ_ENCODE_NUM(lit, 3.14159);
@@ -318,16 +348,20 @@ aq_closure_t *compile_form(aq_state_t *aq, aq_obj_t form) {
 }
 
 static void skip_whitespace(reader *rd) {
-    while (!IS_EOF(rd) && isspace(PEEK_C(rd)))
+    int c;
+    while (!IS_EOF(rd) && isspace(c = PEEK_C(rd))) {
+        if (c == '\n') {
+            rd->l++;
+        }
         rd->e_pos++;
+    }
     RESET(rd);
 }
 
 static inline token make_tok_inplace(reader *rd, token_kind t) {
     token ret;
     ret.t = t;
-    ret.start = rd->s_pos;
-    ret.end = rd->e_pos;
+    ret.l = rd->l;
     SKIP_C(rd);
     RESET(rd);
     return ret;
@@ -336,8 +370,7 @@ static inline token make_tok_inplace(reader *rd, token_kind t) {
 static inline token make_tok_behind(reader *rd, token_kind t) {
     token ret;
     ret.t = t;
-    ret.start = rd->s_pos;
-    ret.end = rd->e_pos;
+    ret.l = rd->l;
     RESET(rd);
     return ret;
 }
@@ -394,8 +427,8 @@ static token get_token(aq_state_t *aq, reader *rd) {
     if (isdigit(c)) {
         return lex_num(aq, rd);
     }
-    printf("invalid character '%c'\n", c);
-    exit(EXIT_FAILURE);
+    log_err(aq, rd->l, "invalid character");
+    return make_tok_inplace(rd, TOK_EOF);
 }
 
 static token peek_token(aq_state_t *aq, reader *rd) {
@@ -454,23 +487,27 @@ static aq_obj_t read_expr(aq_state_t *aq, reader *rd) {
     case TOK_OPEN_PAREN:
         return read_list(aq, rd);
     default:
-        printf("invalid token %d\n", tok.t);
-        exit(EXIT_FAILURE);
+        log_err(aq, tok.l, "expected expression");
+        OBJ_ENCODE_NIL(ret);
+        return ret;
     }
 }
 
-aq_obj_t aq_read_string(aq_state_t *aq, const char *str, size_t sz) {
+const char *aq_read_string(aq_state_t *aq, const char *str, size_t sz,
+                           aq_obj_t *out) {
     reader rd;
     rd.needs_free = false;
     rd.peekf = false;
     rd.b = str;
+    rd.l = 1;
     rd.sz = sz;
     rd.s_pos = rd.e_pos = 0;
 
-    return read_expr(aq, &rd);
+    *out = read_expr(aq, &rd);
+    return NULL;
 }
 
-aq_obj_t aq_read_file(aq_state_t *aq, const char *filename) {
+const char *aq_read_file(aq_state_t *aq, const char *filename, aq_obj_t *out) {
     reader rd;
     rd.needs_free = true;
     rd.peekf = false;
@@ -490,8 +527,10 @@ aq_obj_t aq_read_file(aq_state_t *aq, const char *filename) {
 
     rd.b = str;
     rd.sz = len;
+    rd.l = 1;
     rd.s_pos = rd.e_pos = 0;
-    aq_obj_t ret = read_expr(aq, &rd);
+
+    *out = read_expr(aq, &rd);
     aq->alloc(str, 0, 0);
-    return ret;
+    return NULL;
 }

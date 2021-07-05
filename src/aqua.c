@@ -54,10 +54,14 @@ static void print_obj_inner(aq_obj_t obj, FILE *file) {
     }
     case AQ_OBJ_PAIR: {
         fprintf(file, "(");
-        while (obj.t != AQ_OBJ_NIL) {
+        while (obj.t == AQ_OBJ_PAIR) {
             print_obj_inner(OBJ_GET_CAR(obj), file);
             obj = OBJ_GET_CDR(obj);
             fprintf(file, " ");
+        }
+        if (obj.t != AQ_OBJ_NIL) {
+            fprintf(file, ". ");
+            print_obj_inner(obj, file);
         }
         fprintf(file, ")");
         break;
@@ -76,4 +80,8 @@ void aq_display(aq_state_t *aq, aq_obj_t obj, FILE *file) {
     (void)aq;
     print_obj_inner(obj, file);
     printf("\n");
+}
+
+const char *aq_get_err_msg(aq_state_t *aq) {
+    return aq->compiler_err;
 }
