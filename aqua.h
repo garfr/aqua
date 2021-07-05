@@ -88,7 +88,10 @@ aq_obj_t aq_eval(aq_state_t *aq, aq_obj_t obj);
 
 /* constructs a closure object from a form, but doesn't execute it */
 aq_obj_t aq_compile_form(aq_state_t *aq, aq_obj_t obj);
+
 void aq_print_closure(aq_state_t *aq, aq_obj_t obj, FILE *file);
+
+void aq_display(aq_state_t *aq, aq_obj_t obj, FILE *file);
 
 /*==========================================================================*/
 

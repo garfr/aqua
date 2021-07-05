@@ -30,51 +30,6 @@ static void *libc_alloc(void *ptr, size_t old_sz, size_t new_sz) {
     }
 }
 
-static void print_obj_inner(aq_obj_t obj) {
-    aq_obj_type_t typ = aq_get_type(obj);
-    switch (typ) {
-    case AQ_OBJ_NUM:
-        printf("%f", aq_get_num(obj));
-        return;
-    case AQ_OBJ_TRUE:
-        printf("#t");
-        return;
-    case AQ_OBJ_FALSE:
-        printf("#f");
-        return;
-    case AQ_OBJ_CHAR:
-        printf("'%c'", aq_get_char(obj));
-        return;
-    case AQ_OBJ_NIL:
-        printf("nil");
-        return;
-    case AQ_OBJ_SYM: {
-        size_t sz;
-        const char *sym = aq_get_sym(obj, &sz);
-        printf("%.*s", (int)sz, sym);
-        break;
-    }
-    case AQ_OBJ_PAIR:
-        printf("(");
-        print_obj_inner(aq_get_car(obj));
-        printf(", ");
-        print_obj_inner(aq_get_cdr(obj));
-        printf(")");
-        break;
-    case AQ_OBJ_TABLE:
-        printf("<table>");
-        break;
-    default:
-        printf("<invalid type> %d", typ);
-        break;
-    }
-}
-
-static void print_obj(aq_obj_t obj) {
-    print_obj_inner(obj);
-    printf("\n");
-}
-
 int main() {
     aq_state_t *aq = aq_init_state(libc_alloc);
     aq_set_panic(aq, error_handler);
@@ -83,14 +38,11 @@ int main() {
 
     form = aq_read_file(aq, "test.scm");
 
-    print_obj(form);
     res = aq_eval(aq, form);
 
     aq_collect_garbage(aq);
 
     aq_release2(aq, form, res);
-
-    print_obj(res);
 
     aq_collect_garbage(aq);
 

@@ -282,6 +282,13 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_closure_t *c) {
         case AQ_OP_LTEKK:
             COMPKK(aq, LTE_OP);
             break;
+
+        case AQ_OP_DISPLAYR:
+            aq_display(aq, GET_RD(aq, inst), stdout);
+            break;
+        case AQ_OP_DISPLAYK:
+            aq_display(aq, GET_KD(t, inst), stdout);
+            break;
         }
     }
 }

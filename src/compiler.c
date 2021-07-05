@@ -29,6 +29,7 @@ typedef struct {
     enum {
         LOC_REG,
         LOC_LIT,
+        LOC_UNIT,
     } t;
     size_t idx;
 } val_loc;
@@ -153,6 +154,21 @@ static const uint8_t arith_op_lookup[4][2][2] = {
 
 val_loc generate_form(aq_state_t *aq, aq_obj_t form, comp_fn *fn);
 
+val_loc generate_display(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
+    if (args.t != AQ_OBJ_PAIR) {
+        printf("invalid arguments to arithmetic op\n");
+        exit(EXIT_FAILURE);
+    }
+
+    val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
+    add_inst(aq, fn,
+             ENCODE_AD(loc1.t == LOC_LIT ? AQ_OP_DISPLAYK : AQ_OP_DISPLAYR, 0,
+                       loc1.idx));
+
+    val_loc ret = {LOC_UNIT, 0};
+    return ret;
+}
+
 val_loc generate_arith(aq_state_t *aq, arith_op op, aq_obj_t args,
                        comp_fn *fn) {
     if (args.t != AQ_OBJ_PAIR && OBJ_GET_CDR(args).t != AQ_OBJ_PAIR) {
@@ -182,6 +198,8 @@ val_loc generate_funcall(aq_state_t *aq, aq_obj_t head, aq_obj_t args,
             return generate_arith(aq, ARITH_MUL, args, fn);
         if (streq(sym->s, "/", sym->l, 1))
             return generate_arith(aq, ARITH_DIV, args, fn);
+        if (streq(sym->s, "display", sym->l, 7))
+            return generate_display(aq, args, fn);
     }
     printf("cannot compile real functions yet\n");
     exit(EXIT_FAILURE);
@@ -229,8 +247,11 @@ aq_closure_t *compile_form(aq_state_t *aq, aq_obj_t form) {
     comp_fn global_fn = init_fn(aq);
 
     val_loc val = generate_form(aq, form, &global_fn);
-    add_inst(aq, &global_fn,
-             ENCODE_AD(val.t == LOC_LIT ? AQ_OP_RETK : AQ_OP_RETR, 0, val.idx));
+    if (val.t != LOC_UNIT) {
+        add_inst(
+            aq, &global_fn,
+            ENCODE_AD(val.t == LOC_LIT ? AQ_OP_RETK : AQ_OP_RETR, 0, val.idx));
+    }
 
     aq_template_t *t = GC_NEW(aq, aq_template_t, HEAP_TEMPLATE);
 

@@ -189,3 +189,6 @@ Literals (integers, strings, symbols) are placed in an array and can be loaded i
 * OP_GSETKR - AD - sets the table value in the global table with key K(A) and val R(D)
 * OP_GSETRK - AD - sets the table value in the global table with key R(A) and val K(D)
 * OP_GSETKK - AD - sets the table value in the global table with key K(A) and val K(D)
+
+* OP_DISPLAYR - AD - prints to stdout the value in R(D)
+* OP_DISPLAYK - AD - prints to stdout the value in K(D)
