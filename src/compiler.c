@@ -156,7 +156,7 @@ val_loc generate_form(aq_state_t *aq, aq_obj_t form, comp_fn *fn);
 
 val_loc generate_display(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
     if (args.t != AQ_OBJ_PAIR) {
-        printf("invalid arguments to arithmetic op\n");
+        printf("invalid arguments to display\n");
         exit(EXIT_FAILURE);
     }
 
@@ -166,6 +166,45 @@ val_loc generate_display(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
                        loc1.idx));
 
     val_loc ret = {LOC_UNIT, 0};
+    return ret;
+}
+
+static uint8_t cons_op_lookup[2][2] = {
+    [LOC_REG] = {[LOC_REG] = AQ_OP_CONSRR, [LOC_LIT] = AQ_OP_CONSRK},
+    [LOC_LIT] = {[LOC_REG] = AQ_OP_CONSKR, [LOC_LIT] = AQ_OP_CONSKK},
+};
+
+val_loc generate_cons(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
+    if (args.t != AQ_OBJ_PAIR && OBJ_GET_CDR(args).t != AQ_OBJ_PAIR) {
+        printf("invalid arguments to cons\n");
+        exit(EXIT_FAILURE);
+    }
+
+    val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
+    val_loc loc2 = generate_form(aq, OBJ_GET_CAR(OBJ_GET_CDR(args)), fn);
+    val_loc ret = {LOC_REG, fn->next_reg++};
+    add_inst(aq, fn,
+             ENCODE_ABC(cons_op_lookup[loc1.t][loc2.t], ret.idx, loc1.idx,
+                        loc2.idx));
+
+    return ret;
+}
+
+val_loc generate_carcdr(aq_state_t *aq, aq_obj_t args, int car, comp_fn *fn) {
+    if (args.t != AQ_OBJ_PAIR) {
+        printf("invalid arguments to car\n");
+        exit(EXIT_FAILURE);
+    }
+
+    val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
+    if (loc1.t != LOC_REG) {
+        printf("type error: taking car/cdr of non-pair object\n");
+        exit(EXIT_FAILURE);
+    }
+
+    val_loc ret = {LOC_REG, fn->next_reg++};
+
+    add_inst(aq, fn, ENCODE_AD(car ? AQ_OP_CAR : AQ_OP_CDR, ret.idx, loc1.idx));
     return ret;
 }
 
@@ -200,6 +239,12 @@ val_loc generate_funcall(aq_state_t *aq, aq_obj_t head, aq_obj_t args,
             return generate_arith(aq, ARITH_DIV, args, fn);
         if (streq(sym->s, "display", sym->l, 7))
             return generate_display(aq, args, fn);
+        if (streq(sym->s, "cons", sym->l, 4))
+            return generate_cons(aq, args, fn);
+        if (streq(sym->s, "car", sym->l, 3))
+            return generate_carcdr(aq, args, 1, fn);
+        if (streq(sym->s, "cdr", sym->l, 3))
+            return generate_carcdr(aq, args, 0, fn);
     }
     printf("cannot compile real functions yet\n");
     exit(EXIT_FAILURE);
@@ -381,6 +426,7 @@ static aq_obj_t read_list(aq_state_t *aq, reader *rd) {
         temp = read_expr(aq, rd);
         list = aq_create_pair(aq, temp, list);
     }
+    next_token(aq, rd);
 
     OBJ_ENCODE_NIL(rev1);
     while (list.t != AQ_OBJ_NIL) {

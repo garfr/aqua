@@ -36,6 +36,7 @@ int main(int argc, const char *argv[]) {
     aq_var2(aq, file, closure);
 
     file = aq_read_file(aq, argv[1]);
+    aq_display(aq, file, stdout);
 
     if (dump_bc) {
         aq_obj_t closure = aq_compile_form(aq, file);

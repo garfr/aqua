@@ -52,13 +52,17 @@ static void print_obj_inner(aq_obj_t obj, FILE *file) {
         fprintf(file, "%.*s", (int)sz, sym);
         break;
     }
-    case AQ_OBJ_PAIR:
+    case AQ_OBJ_PAIR: {
         fprintf(file, "(");
-        print_obj_inner(aq_get_car(obj), file);
-        fprintf(file, ", ");
-        print_obj_inner(aq_get_cdr(obj), file);
+        while (obj.t != AQ_OBJ_NIL) {
+            print_obj_inner(OBJ_GET_CAR(obj), file);
+            obj = OBJ_GET_CDR(obj);
+            fprintf(file, " ");
+        }
         fprintf(file, ")");
         break;
+    }
+
     case AQ_OBJ_TABLE:
         fprintf(file, "<table>");
         break;
