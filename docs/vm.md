@@ -121,6 +121,7 @@ Literals (integers, strings, symbols) are placed in an array and can be loaded i
 
 * OP_RETR - AD - returns the value of R(D)
 * OP_RETK - AD - offset encoding - returns the value of K(D)
+* OP_RETNIL - (no encoding) - returns nil
 
 * OP_MOVR - AD - moves R(D) into R(A)
 * OP_MOVK - AD - moves K(D) into R(A)

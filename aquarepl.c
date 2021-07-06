@@ -36,7 +36,7 @@ int main() {
 
     aq_var2(aq, form, res);
 
-    aq_read_file(aq, "test.scm", &form);
+    aq_eval_file(aq, "test.scm");
 
     res = aq_eval(aq, form);
 

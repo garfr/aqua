@@ -98,7 +98,11 @@ aq_obj_t aq_execute_closure(aq_state_t *aq, aq_closure_t *c) {
             return GET_RD(aq, inst);
         case AQ_OP_RETK:
             return GET_KD(t, inst);
-
+        case AQ_OP_RETNIL: {
+            aq_obj_t ret;
+            OBJ_ENCODE_NIL(ret);
+            return ret;
+        }
         case AQ_OP_MOVR:
             GET_RA(aq, inst) = GET_RD(aq, inst);
             break;

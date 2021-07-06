@@ -82,9 +82,8 @@ void aq_set_panic(aq_state_t *aq, aq_panic_t panic);
 
 void aq_collect_garbage(aq_state_t *aq);
 
-const char *aq_read_file(aq_state_t *aq, const char *str, aq_obj_t *out);
-const char *aq_read_string(aq_state_t *aq, const char *str, size_t sz,
-                           aq_obj_t *out);
+aq_obj_t aq_eval_file(aq_state_t *aq, const char *str);
+aq_obj_t aq_eval_string(aq_state_t *aq, const char *str, size_t sz);
 
 aq_obj_t aq_eval(aq_state_t *aq, aq_obj_t obj);
 

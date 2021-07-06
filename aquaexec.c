@@ -42,6 +42,7 @@ int main(int argc, const char *argv[]) {
     }
 
     bool dump_bc = false;
+    (void)dump_bc;
 
     for (int i = 2; i < argc; i++) {
         if (streq("-b", argv[i])) {
@@ -54,20 +55,7 @@ int main(int argc, const char *argv[]) {
 
     aq_var2(aq, file, closure);
 
-    const char *str = aq_read_file(aq, argv[1], &file);
-    if (str != NULL) {
-        fprintf(stderr, "%s\n", str);
-        return EXIT_FAILURE;
-    }
-
-    aq_display(aq, file, stdout);
-
-    if (dump_bc) {
-        aq_obj_t closure = aq_compile_form(aq, file);
-        aq_print_closure(aq, closure, stdout);
-    }
-
-    aq_eval(aq, file);
+    file = aq_eval_file(aq, argv[1]);
 
     aq_release2(aq, file, closure);
 

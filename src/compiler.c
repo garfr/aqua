@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdarg.h>
 
 #include "compiler.h"
 #include "gc.h"
@@ -7,6 +8,15 @@
 
 #define INIT_CODE_CAP 8
 #define INIT_LITS_CAP 8
+
+typedef struct {
+    size_t reg;
+    aq_sym_t *sym;
+} lex_var;
+
+typedef struct lex_state {
+    struct lex_env *up;
+} lex_state;
 
 /* the state needed to compile one function, these are created recursively and
  * the final state of it after compilation is used to construct templates and
@@ -21,6 +31,8 @@ typedef struct {
     aq_obj_t *lits;
     size_t lits_sz;
     size_t lits_cap;
+
+    lex_state *lex;
 } comp_fn;
 
 /* after the code to generate a value is created, this object is passed to point
@@ -119,6 +131,14 @@ log_err(aq_state_t *aq, size_t line, const char *str) {
     exit(EXIT_FAILURE);
 }
 
+/* returns false if its in the global enviroment */
+bool find_in_scope(comp_fn *fn, aq_sym_t *sym, size_t *idx_out) {
+    (void)fn;
+    (void)sym;
+    (void)idx_out;
+    return false;
+}
+
 val_loc add_lit(aq_state_t *aq, comp_fn *fn, aq_obj_t obj) {
     if (fn->lits_sz + 1 >= fn->lits_cap) {
         fn->lits = aq->alloc(fn->lits, fn->lits_cap * sizeof(aq_obj_t),
@@ -210,6 +230,31 @@ static uint8_t cons_op_lookup[2][2] = {
     [LOC_LIT] = {[LOC_REG] = AQ_OP_CONSKR, [LOC_LIT] = AQ_OP_CONSKK},
 };
 
+val_loc generate_define(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
+    if (fn->lex == NULL) {
+        if (args.t == AQ_OBJ_PAIR && OBJ_GET_CDR(args).t == AQ_OBJ_PAIR &&
+            OBJ_GET_CAR(args).t == AQ_OBJ_SYM) {
+            aq_obj_t sym = OBJ_GET_CAR(args);
+            val_loc loc1 =
+                generate_form(aq, OBJ_GET_CAR(OBJ_GET_CDR(args)), fn);
+            size_t sym_idx = add_lit(aq, fn, sym).idx;
+            add_inst(aq, fn,
+                     ENCODE_AD(loc1.t == LOC_REG ? AQ_OP_GSETKR : AQ_OP_GSETKK,
+                               sym_idx, loc1.idx));
+            val_loc ret = {LOC_UNIT, 0};
+            return ret;
+        } else {
+            log_err(
+                aq, 0,
+                "builtin function 'define' takes a symbol and an expression");
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        printf("internal: cannot use lexical enviroments yet\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 val_loc generate_cons(aq_state_t *aq, aq_obj_t args, comp_fn *fn) {
     if (args.t == AQ_OBJ_PAIR && OBJ_GET_CDR(args).t == AQ_OBJ_PAIR) {
         val_loc loc1 = generate_form(aq, OBJ_GET_CAR(args), fn);
@@ -276,6 +321,8 @@ val_loc generate_funcall(aq_state_t *aq, aq_obj_t head, aq_obj_t args,
             return generate_carcdr(aq, args, 1, fn);
         if (streq(sym->s, "cdr", sym->l, 3))
             return generate_carcdr(aq, args, 0, fn);
+        if (streq(sym->s, "define", sym->l, 6))
+            return generate_define(aq, args, fn);
     }
     printf("cannot compile real functions yet\n");
     exit(EXIT_FAILURE);
@@ -287,7 +334,22 @@ val_loc generate_form(aq_state_t *aq, aq_obj_t form, comp_fn *fn) {
         return add_lit(aq, fn, form);
     case AQ_OBJ_PAIR:
         return generate_funcall(aq, OBJ_GET_CAR(form), OBJ_GET_CDR(form), fn);
+    case AQ_OBJ_SYM: {
+        size_t idx;
+        aq_sym_t *s = OBJ_DECODE_HEAP(form, aq_sym_t);
+        if (find_in_scope(fn, s, &idx)) {
+            printf("cannot use local variables yet");
+            exit(EXIT_FAILURE);
+        } else {
+            val_loc ret = {LOC_REG, fn->next_reg++};
+            size_t idx = add_lit(aq, fn, form).idx;
+            add_inst(aq, fn, ENCODE_AD(AQ_OP_GGETK, ret.idx, idx));
+            return ret;
+        }
+    }
+
     default:
+        printf("%d\n", form.t);
         log_err(aq, 0, "expected valid form in expression");
     }
     aq_obj_t lit;
@@ -307,6 +369,7 @@ comp_fn init_fn(aq_state_t *aq) {
     ret.lits = aq->alloc(NULL, 0, sizeof(aq_obj_t) * ret.lits_cap);
 
     ret.next_reg = 0;
+    ret.lex = NULL;
 
     return ret;
 }
@@ -326,6 +389,8 @@ aq_closure_t *compile_form(aq_state_t *aq, aq_obj_t form) {
         add_inst(
             aq, &global_fn,
             ENCODE_AD(val.t == LOC_LIT ? AQ_OP_RETK : AQ_OP_RETR, 0, val.idx));
+    } else {
+        add_inst(aq, &global_fn, ENCODE_ABC(AQ_OP_RETNIL, 0, 0, 0));
     }
 
     aq_template_t *t = GC_NEW(aq, aq_template_t, HEAP_TEMPLATE);
@@ -448,7 +513,7 @@ static token next_token(aq_state_t *aq, reader *rd) {
     return get_token(aq, rd);
 }
 
-static aq_obj_t read_expr(aq_state_t *aq, reader *rd);
+static bool read_expr(aq_state_t *aq, reader *rd, aq_obj_t *out);
 
 static aq_obj_t read_list(aq_state_t *aq, reader *rd) {
     aq_var4(aq, list, temp, rev1, rev2);
@@ -456,7 +521,7 @@ static aq_obj_t read_list(aq_state_t *aq, reader *rd) {
     OBJ_ENCODE_NIL(list);
 
     while (peek_token(aq, rd).t != TOK_CLOSE_PAREN) {
-        temp = read_expr(aq, rd);
+        read_expr(aq, rd, &temp);
         list = aq_create_pair(aq, temp, list);
     }
     next_token(aq, rd);
@@ -474,27 +539,28 @@ static aq_obj_t read_list(aq_state_t *aq, reader *rd) {
     return rev1;
 }
 
-static aq_obj_t read_expr(aq_state_t *aq, reader *rd) {
-    aq_obj_t ret;
+static bool read_expr(aq_state_t *aq, reader *rd, aq_obj_t *out) {
     token tok = next_token(aq, rd);
     switch (tok.t) {
     case TOK_SYM:
-        OBJ_ENCODE_SYM(ret, tok.v.sym);
-        return ret;
+        OBJ_ENCODE_SYM((*out), tok.v.sym);
+        return true;
     case TOK_NUM:
-        OBJ_ENCODE_NUM(ret, tok.v.num);
-        return ret;
+        OBJ_ENCODE_NUM((*out), tok.v.num);
+        return true;
     case TOK_OPEN_PAREN:
-        return read_list(aq, rd);
+        *out = read_list(aq, rd);
+        return true;
+    case TOK_EOF:
+        return false;
     default:
         log_err(aq, tok.l, "expected expression");
-        OBJ_ENCODE_NIL(ret);
-        return ret;
+        OBJ_ENCODE_NIL((*out));
+        return false;
     }
 }
 
-const char *aq_read_string(aq_state_t *aq, const char *str, size_t sz,
-                           aq_obj_t *out) {
+aq_obj_t aq_eval_string(aq_state_t *aq, const char *str, size_t sz) {
     reader rd;
     rd.needs_free = false;
     rd.peekf = false;
@@ -503,11 +569,11 @@ const char *aq_read_string(aq_state_t *aq, const char *str, size_t sz,
     rd.sz = sz;
     rd.s_pos = rd.e_pos = 0;
 
-    *out = read_expr(aq, &rd);
-    return NULL;
+    aq_obj_t ret;
+    read_expr(aq, &rd, &ret);
+    return ret;
 }
-
-const char *aq_read_file(aq_state_t *aq, const char *filename, aq_obj_t *out) {
+aq_obj_t aq_eval_file(aq_state_t *aq, const char *filename) {
     reader rd;
     rd.needs_free = true;
     rd.peekf = false;
@@ -530,7 +596,12 @@ const char *aq_read_file(aq_state_t *aq, const char *filename, aq_obj_t *out) {
     rd.l = 1;
     rd.s_pos = rd.e_pos = 0;
 
-    *out = read_expr(aq, &rd);
+    aq_var2(aq, form, res);
+
+    while (read_expr(aq, &rd, &form)) {
+        res = aq_eval(aq, form);
+    }
+
     aq->alloc(str, 0, 0);
-    return NULL;
+    return res;
 }

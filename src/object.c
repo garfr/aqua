@@ -167,6 +167,7 @@ bool obj_eq(aq_obj_t ob1, aq_obj_t ob2) {
     case AQ_OBJ_TABLE:
         return ob1.v.h == ob2.v.h;
     }
+    return false;
 }
 
 aq_obj_t aq_table_get(aq_state_t *aq, aq_obj_t tbl_obj, aq_obj_t key) {
